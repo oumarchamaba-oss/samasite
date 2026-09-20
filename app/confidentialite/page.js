@@ -23,15 +23,15 @@ export default function Confidentialite() {
       <main className="max-w-2xl mx-auto px-5 py-14">
         <h1 className="text-2xl font-bold mb-1" style={{ color: T.encre }}>Politique de confidentialité</h1>
         <p className="text-xs mb-10" style={{ color: T.gris }}>
-          Dernière mise à jour : [à compléter avant publication]. Cette page décrit les données
-          personnelles traitées par Sama Site et vos droits — remplacez les crochets par vos
-          informations avant de mettre cette page en ligne.
+          Dernière mise à jour : 20 septembre 2026. Cette page décrit les données
+          personnelles traitées par Sama Site et vos droits.
         </p>
 
         <Section titre="Qui est responsable de vos données">
           <p>
-            Sama Site est édité par [votre nom ou raison sociale], basé à Dakar, Sénégal.
-            Pour toute question relative à vos données personnelles, contactez [votre e-mail de contact].
+            Sama Site est un produit de Codesign Center SN SUARL (NINEA 010238758, RCCM SN DKR
+            2023 B 18462), joignable à Cité Keur Gorgui, Rond-point, Dakar 23119, Sénégal.
+            Pour toute question relative à vos données personnelles, contactez oumarchamaba@gmail.com.
           </p>
         </Section>
 
@@ -72,7 +72,7 @@ export default function Confidentialite() {
         <Section titre="Vos droits">
           <p>
             Vous pouvez demander l'accès, la rectification ou la suppression de vos données à tout
-            moment en nous contactant à [votre e-mail de contact]. Nous traiterons votre demande
+            moment en nous contactant à oumarchamaba@gmail.com. Nous traiterons votre demande
             dans un délai raisonnable.
           </p>
         </Section>

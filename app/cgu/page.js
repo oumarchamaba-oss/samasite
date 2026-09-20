@@ -23,14 +23,15 @@ export default function CGU() {
       <main className="max-w-2xl mx-auto px-5 py-14">
         <h1 className="text-2xl font-bold mb-1" style={{ color: T.encre }}>Conditions générales d'utilisation et de vente</h1>
         <p className="text-xs mb-10" style={{ color: T.gris }}>
-          Dernière mise à jour : [à compléter avant publication]. Remplacez les crochets par vos
-          informations avant de mettre cette page en ligne — ce texte est un point de départ, pas un
-          document validé juridiquement.
+          Dernière mise à jour : 20 septembre 2026. Ce texte n'a pas encore été validé par un
+          juriste — voir la section 9 ci-dessous.
         </p>
 
         <Section titre="1. Objet">
           <p>
-            Sama Site permet à un commerce de créer un mini-site e-commerce avec prise de commande
+            Sama Site est un produit édité par Codesign Center SN SUARL (NINEA 010238758, RCCM SN
+            DKR 2023 B 18462), joignable à Cité Keur Gorgui, Rond-point, Dakar 23119, Sénégal.
+            Il permet à un commerce de créer un mini-site e-commerce avec prise de commande
             via WhatsApp, sans compétence technique. En créant un site avec Sama Site, vous acceptez
             les présentes conditions.
           </p>
@@ -87,7 +88,16 @@ export default function CGU() {
         </Section>
 
         <Section titre="8. Contact">
-          <p>Pour toute question : [votre e-mail de contact].</p>
+          <p>Pour toute question : oumarchamaba@gmail.com.</p>
+        </Section>
+
+        <Section titre="9. Validation juridique">
+          <p>
+            Ce texte a été rédigé comme point de départ raisonnable pour un service de ce type,
+            mais n'a pas encore été relu par un juriste sénégalais spécialisé en droit du numérique
+            et en droit de la consommation. Une validation juridique est recommandée avant toute
+            communication commerciale à grande échelle.
+          </p>
         </Section>
       </main>
     </div>
