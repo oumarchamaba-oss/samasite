@@ -1,15 +1,15 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Sparkles, MessageCircle, LayoutGrid, ArrowRight, ArrowLeft, Globe, Plus, X, Timer, Wallet,
   Link2, Check, RefreshCw, AlertCircle, ClipboardList, MapPin, Mail, Image, Upload, Tag, Monitor,
-  Palette as PaletteIcon,
+  Palette as PaletteIcon, CheckCircle2,
 } from "lucide-react";
 import {
   T, SECTEURS, SECTEUR_COULEURS, METIERS_ARTISANAT, trouverMetier, paletteIdPour,
-  genererSchema, deriverVariantes, extraireCouleurDominante,
-  MODES_LIVRAISON, RESEAUX_SOCIAUX, PRIX, DOMAINES, DUREES, PAIEMENTS,
+  genererSchema, deriverVariantes, extraireCouleurDominante, horairesParDefaut,
+  MODES_LIVRAISON, RESEAUX_SOCIAUX, PRIX, DOMAINES, DUREES, PAIEMENTS, PRIX_MODIFICATION,
   WHATSAPP_SUPPORT, AnneauCompteARebours, Badge,
 } from "../lib/data";
 import { IMG_CONFIRMED } from "../lib/images";
@@ -18,6 +18,11 @@ import { demarrerPaiement } from "../lib/paiementGateway";
 import ApercuSite from "./ApercuSite";
 import ApercuPleinEcran from "./ApercuPleinEcran";
 import AssistantIA from "./AssistantIA";
+import EditeurHoraires from "./EditeurHoraires";
+
+// Clé localStorage utilisée pour conserver le site en cours de création
+// pendant l'aller-retour par l'inscription (voir publierEssai ci-dessous).
+const DRAFT_KEY = "sama_site_draft_v1";
 
 export default function CreerSite() {
   const router = useRouter();
@@ -30,19 +35,105 @@ export default function CreerSite() {
     nom: "", accroche: "", whatsapp: "", adresse: "", email: "",
     banniere: null, texteBanniere: "", lienGoogleMaps: "", logo: null, couleurs: null,
     produits: [], reseaux: { facebook: "", instagram: "", tiktok: "", twitter: "" },
-    modesLivraison: [], metier: "", metierGroupe: "",
+    modesLivraison: [], metier: "", metierGroupe: "", horaires: horairesParDefaut(),
   });
   const [paye, setPaye] = useState(false);
   const [payeAutomatiquement, setPayeAutomatiquement] = useState(false);
   const [traitementAPI, setTraitementAPI] = useState(false);
   const [siteId, setSiteId] = useState(null);
+  const [session, setSession] = useState(undefined); // undefined = pas encore vérifié
   const [publicationEnCours, setPublicationEnCours] = useState(false);
   const [erreurPublication, setErreurPublication] = useState("");
+  const [sessionExpiree, setSessionExpiree] = useState(false);
   const [domaineDemande, setDomaineDemande] = useState("");
   const [methodePaiement, setMethodePaiement] = useState(null);
   const [extensionDomaine, setExtensionDomaine] = useState(null);
   const [duree, setDuree] = useState(null);
   const [contactNom, setContactNom] = useState("");
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    // BUG CORRIGÉ (audit sept. 2026) : sans cet écouteur, "session" n'était
+    // capturé qu'UNE SEULE FOIS au chargement de la page et ne changeait plus
+    // jamais ensuite. Si la connexion réelle expirait pendant que l'utilisateur
+    // remplissait le formulaire (souvent long : couleurs, produits, photos...),
+    // "session" restait affiché comme valide dans le navigateur alors que le
+    // jeton réel envoyé à Supabase ne l'était plus — la toute première requête
+    // authentifiée (justement, publier) échouait alors avec une erreur de
+    // session/JWT brute et peu compréhensible, sans aucun moyen de reprendre.
+    // onAuthStateChange tient "session" à jour en continu (connexion,
+    // déconnexion, rafraîchissement de jeton) pendant toute la durée de vie du
+    // composant.
+    const { data: abonnement } = supabase.auth.onAuthStateChange((_event, nouvelleSession) => {
+      setSession(nouvelleSession);
+    });
+    return () => abonnement.subscription.unsubscribe();
+  }, []);
+
+  // Sauvegarde tout ce qui a été rempli jusqu'ici (et, si on en est déjà là,
+  // les informations de commande) pour pouvoir reprendre exactement où on
+  // s'était arrêté après reconnexion — que ce soit parce qu'aucun compte
+  // n'existait encore, ou parce que la session s'est révélée expirée au
+  // moment de publier.
+  const sauvegarderBrouillon = (etapeReprise) => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        secteurId, business, contactNom, siteId, extensionDomaine, duree, methodePaiement,
+        etapeReprise,
+      }));
+    } catch {
+      // Stockage local indisponible (navigation privée, quota...) : tant pis,
+      // on continue quand même — l'utilisateur perdra juste la reprise auto.
+    }
+  };
+
+  // Une erreur Supabase provoquée par une session expirée/invalide se
+  // reconnaît soit à son message ("JWT expired", "invalid claim", ...), soit
+  // — plus fiable, car le message exact varie selon la version de la
+  // librairie — au fait qu'une vérification immédiate de la session en cours
+  // révèle qu'elle n'existe plus. On vérifie donc toujours les deux.
+  const estErreurSession = async (error) => {
+    const detail = (error?.message || "").toLowerCase();
+    if (/jwt|token|session|not authenticated|401/.test(detail)) return true;
+    const { data } = await supabase.auth.getSession();
+    return !data.session;
+  };
+
+  // Un compte est désormais requis pour publier un site (essai ou payant) —
+  // mais on laisse le visiteur explorer les étapes 1 à 3 (catégorie, couleurs,
+  // contenu) et voir l'aperçu en direct sans se connecter : l'inscription
+  // n'intervient qu'au moment de vraiment publier, pas avant. S'il n'a pas de
+  // compte à ce moment-là, on sauvegarde ce qu'il a déjà rempli et on l'envoie
+  // s'inscrire ; à son retour (?reprise=1), on restaure tout automatiquement.
+  useEffect(() => {
+    if (searchParams.get("reprise") !== "1" || session === undefined) return;
+    if (!session) return; // pas encore connecté : rien à restaurer
+    if (typeof window === "undefined") return;
+    try {
+      const brouillon = window.localStorage.getItem(DRAFT_KEY);
+      if (!brouillon) return;
+      const d = JSON.parse(brouillon);
+      if (d.secteurId) setSecteurId(d.secteurId);
+      if (d.business) setBusiness(d.business);
+      if (d.contactNom) setContactNom(d.contactNom);
+      // Un brouillon sauvegardé après une session expirée en cours de
+      // commande (étape 5) contient aussi ces informations — un brouillon
+      // "pas encore de compte" (avant la toute première publication) ne les a
+      // pas : dans ce cas on repart simplement de l'étape 3, comme avant.
+      if (d.siteId) setSiteId(d.siteId);
+      if (d.extensionDomaine) setExtensionDomaine(d.extensionDomaine);
+      if (d.duree) setDuree(d.duree);
+      if (d.methodePaiement) setMethodePaiement(d.methodePaiement);
+      setStep(d.etapeReprise || 3);
+      setSessionExpiree(false);
+      setErreurPublication("");
+      window.localStorage.removeItem(DRAFT_KEY);
+    } catch {
+      // Brouillon corrompu ou illisible : on ignore simplement, l'utilisateur repart de zéro.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, searchParams]);
 
   const [nouveauProduit, setNouveauProduit] = useState("");
   const [apercuComplet, setApercuComplet] = useState(false);
@@ -56,7 +147,9 @@ export default function CreerSite() {
   const estService = secteur?.type === "service";
   const joursRestants = 2;
   const nomValide = business.nom.trim().length > 0;
-  const whatsappValide = business.whatsapp.trim().length > 0;
+  // Pas juste "non vide" : au moins 8 chiffres, sinon le lien wa.me généré
+  // plus tard (voir lib/genererFichierSite.js) serait cassé silencieusement.
+  const whatsappValide = business.whatsapp.replace(/\D/g, "").length >= 8;
   const peutPublier = nomValide && whatsappValide;
   const demoMetierActif = business.metier ? trouverMetier(business.metier)?.demo : null;
   const demoActif = demoMetierActif || secteur?.demo;
@@ -73,10 +166,28 @@ export default function CreerSite() {
     setBusiness((b) => ({ ...b, couleurs: { ...genererSchema(hex), baseId: couleur.id, variante } }));
   };
 
-  const lireImage = (file, callback) => {
+  // Redimensionne et compresse l'image avant de la stocker : une photo de
+  // téléphone (souvent 3-8 Mo) devient ainsi quelques dizaines de Ko. Sans ça,
+  // publier un site avec logo/bannière/photos de produits pouvait envoyer
+  // plusieurs Mo en une seule requête et provoquer un dépassement de délai
+  // ("statement timeout") côté base de données.
+  const lireImage = (file, callback, largeurMax = 1000) => {
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (e) => callback(e.target.result);
+    reader.onload = (e) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const echelle = Math.min(1, largeurMax / img.width);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * echelle);
+        canvas.height = Math.round(img.height * echelle);
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        callback(canvas.toDataURL("image/jpeg", 0.75));
+      };
+      img.onerror = () => callback(e.target.result); // repli : image brute si le redimensionnement échoue
+      img.src = e.target.result;
+    };
     reader.readAsDataURL(file);
   };
 
@@ -110,13 +221,38 @@ export default function CreerSite() {
     return { ...b, modesLivraison: nouveaux };
   });
 
-  // Publie réellement le site en base (statut "essai") et retient son identifiant
-  // (en mémoire + localStorage) pour que "Mon espace" puisse le retrouver plus tard.
+  // Traduit une erreur technique en message compréhensible. Un "statement
+  // timeout" juste après une mise à jour de la base de données (migration)
+  // est presque toujours temporaire — le plus souvent, réessayer suffit.
+  const messageErreurPublication = (error) => {
+    const detail = error?.message || "";
+    if (detail.toLowerCase().includes("timeout")) {
+      return "Le serveur a mis trop de temps à répondre. C'est généralement temporaire — patientez quelques secondes et cliquez à nouveau sur \"Publier\".";
+    }
+    return "La publication a échoué : " + (detail || "erreur inconnue");
+  };
+
+  // Publie réellement le site en base (statut "essai") — réservé aux comptes
+  // connectés : un compte permet de retrouver tous ses sites (essai, payés,
+  // expirés...) au même endroit, et c'est plus simple pour vous que de gérer
+  // des liens privés. Si le visiteur n'est pas encore connecté, on met de
+  // côté ce qu'il a déjà rempli et on l'envoie créer un compte (e-mail ou
+  // Google) ; il revient directement ici, tout est restauré (voir le useEffect
+  // plus haut), il n'a plus qu'à confirmer.
   const publierEssai = async () => {
     if (!peutPublier) { setEssaiTente(true); return; }
+
+    if (!session) {
+      sauvegarderBrouillon(3);
+      router.push(`/inscription?retour=${encodeURIComponent("/creer?reprise=1")}`);
+      return;
+    }
+
     setPublicationEnCours(true);
     setErreurPublication("");
-    const { data, error } = await supabase.from("sites").insert([{
+    setSessionExpiree(false);
+
+    const champsCommuns = {
       nom_entreprise: business.nom,
       contact_nom: contactNom || null,
       whatsapp: business.whatsapp,
@@ -133,35 +269,59 @@ export default function CreerSite() {
       produits: business.produits || [],
       reseaux: business.reseaux || {},
       modes_livraison: business.modesLivraison || [],
-      statut: "essai",
-    }]).select().single();
+      horaires: business.horaires || null,
+    };
+
+    const { data, error } = await supabase.from("sites").insert([{ ...champsCommuns, statut: "essai", user_id: session.user.id }]).select().single();
     setPublicationEnCours(false);
     if (error) {
-      setErreurPublication("La publication a échoué : " + error.message);
+      if (await estErreurSession(error)) {
+        sauvegarderBrouillon(3);
+        setSessionExpiree(true);
+        setErreurPublication("Votre session a expiré. Reconnectez-vous pour continuer la publication — toutes vos informations ont été conservées.");
+        return;
+      }
+      setErreurPublication(messageErreurPublication(error));
       return;
     }
     setSiteId(data.id);
-    if (typeof window !== "undefined") window.localStorage.setItem("sama_site_id", data.id);
     setStep(4);
   };
 
   // Chemin manuel : le client indique avoir déjà envoyé l'argent directement.
   // L'administrateur doit alors confirmer manuellement dans le tableau de bord
-  // ("Marquer comme payé").
+  // ("Marquer comme payé"). Un compte est garanti à ce stade (voir
+  // publierEssai) : toujours soumis via soumettre_paiement_manuel, jamais via
+  // le chemin par jeton (réservé aux sites créés avant l'obligation de compte).
   const confirmerCommande = async () => {
     setTraitement(true);
+    setErreurPublication("");
+    setSessionExpiree(false);
     const slug = (business.nom || demoActif.nom).toLowerCase().replace(/\s+/g, "");
-    const { error } = await supabase.from("sites").update({
-      statut: "a_livrer",
-      contact_nom: contactNom,
-      extension: extensionDomaine,
-      duree,
-      montant: PRIX[extensionDomaine][duree],
-      moyen_paiement: methodePaiement,
-      domaine: domaineDemande || `${slug}.${extensionDomaine}`,
-    }).eq("id", siteId);
+    const { error } = await supabase.rpc("soumettre_paiement_manuel", {
+      p_site_id: siteId,
+      p_contact_nom: contactNom,
+      p_extension: extensionDomaine,
+      p_duree: duree,
+      p_montant: PRIX[extensionDomaine][duree],
+      p_moyen_paiement: methodePaiement,
+      p_domaine: domaineDemande || `${slug}.${extensionDomaine}`,
+    });
     setTraitement(false);
-    if (!error) { setPaye(true); setPayeAutomatiquement(false); }
+    if (error) {
+      if (await estErreurSession(error)) {
+        // Le site (statut "essai") existe déjà en base à ce stade : on
+        // conserve son id pour reprendre directement à l'étape de commande,
+        // pas depuis le tout début.
+        sauvegarderBrouillon(5);
+        setSessionExpiree(true);
+        setErreurPublication("Votre session a expiré. Reconnectez-vous pour continuer — votre site et vos informations de commande ont été conservés.");
+        return;
+      }
+      setErreurPublication(messageErreurPublication(error));
+      return;
+    }
+    setPaye(true); setPayeAutomatiquement(false);
   };
 
   // Chemin automatique : passe par lib/paiementGateway.js, le point d'intégration
@@ -474,7 +634,7 @@ export default function CreerSite() {
               <MessageCircle size={16} color="#25D366" strokeWidth={2} />
               <input value={business.whatsapp} onChange={(e) => setBusiness((b) => ({ ...b, whatsapp: e.target.value }))} placeholder="77 000 00 00" className="text-sm outline-none flex-1 bg-transparent" />
             </div>
-            {essaiTente && !whatsappValide && <p className="text-xs mb-3" style={{ color: T.rouge }}>Le numéro WhatsApp est requis — c'est le canal de commande de votre site.</p>}
+            {essaiTente && !whatsappValide && <p className="text-xs mb-3" style={{ color: T.rouge }}>Entrez un numéro WhatsApp valide (au moins 8 chiffres) — c'est le canal de commande de votre site.</p>}
             {!(essaiTente && !whatsappValide) && <div className="mb-4" />}
 
             <label className="block text-xs font-semibold mb-1.5" style={{ color: T.gris }}>Adresse e-mail</label>
@@ -593,6 +753,8 @@ export default function CreerSite() {
               })}
             </div>
             <p className="text-xs mb-6" style={{ color: T.gris }}>Un réseau ne s'affiche sur votre site que si vous renseignez son lien.</p>
+
+            <EditeurHoraires horaires={business.horaires} onChange={(h) => setBusiness((b) => ({ ...b, horaires: h }))} />
           </div>
 
           <div>
@@ -612,6 +774,12 @@ export default function CreerSite() {
           {erreurPublication && (
             <p className="text-xs font-medium mb-3" style={{ color: T.rouge }}>{erreurPublication}</p>
           )}
+          {sessionExpiree && (
+            <button onClick={() => router.push(`/connexion?retour=${encodeURIComponent("/creer?reprise=1")}`)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold mb-3" style={{ background: T.jaune, color: T.bleuFonce }}>
+              Se reconnecter <ArrowRight size={15} />
+            </button>
+          )}
           <div className="flex justify-between items-center">
             <button onClick={() => setStep(2)} className="flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold" style={{ color: T.bleu }}><ArrowLeft size={16} /> Retour</button>
             <button disabled={publicationEnCours} onClick={publierEssai}
@@ -629,7 +797,7 @@ export default function CreerSite() {
       {/* ÉTAPE 4 — essai */}
       {step === 4 && secteur && (
         <div>
-          <div className="rounded-2xl p-5 mb-8 flex items-center gap-4" style={{ background: T.jauneFond, border: `1.5px solid #F5E7A8` }}>
+          <div className="rounded-2xl p-5 mb-4 flex items-center gap-4" style={{ background: T.jauneFond, border: `1.5px solid #F5E7A8` }}>
             <AnneauCompteARebours joursRestants={joursRestants} />
             <div>
               <p className="font-semibold text-sm" style={{ color: T.jauneFonce }}>Votre site est en ligne pour 2 jours d'essai</p>
@@ -637,6 +805,14 @@ export default function CreerSite() {
                 Publié sur <strong>www.{(business.nom || demoActif.nom).toLowerCase().replace(/\s+/g, "")}.samasite.com</strong> — passé ce délai sans paiement, le site est désactivé.
               </p>
             </div>
+          </div>
+
+          <div className="rounded-2xl p-5 mb-8 flex items-start gap-3" style={{ background: T.bleuClair, border: `1.5px solid ${T.bleuClairBord}` }}>
+            <CheckCircle2 size={18} color={T.bleu} className="mt-0.5 shrink-0" />
+            <p className="text-xs" style={{ color: T.encre }}>
+              Ce site est enregistré dans votre compte — retrouvez-le et modifiez-le à tout moment depuis{" "}
+              <a href="/espace" className="font-semibold" style={{ color: T.bleu }}>Mon espace</a>.
+            </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 items-start">
@@ -730,10 +906,10 @@ export default function CreerSite() {
 
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-sm font-medium" style={{ color: T.encre }}>Modifications et support</div>
-                    <div className="text-xs mt-0.5" style={{ color: T.gris }}>Textes, produits, couleurs — sans limite pendant toute la période</div>
+                    <div className="text-sm font-medium" style={{ color: T.encre }}>Modifications après mise en ligne</div>
+                    <div className="text-xs mt-0.5" style={{ color: T.gris }}>Textes, produits, couleurs — {PRIX_MODIFICATION.toLocaleString("fr-FR")} F par modification enregistrée, une fois votre site actif</div>
                   </div>
-                  <Badge tone="vert">Inclus</Badge>
+                  <Badge tone="jaune">{PRIX_MODIFICATION.toLocaleString("fr-FR")} F / modif.</Badge>
                 </div>
               </div>
 
@@ -781,6 +957,12 @@ export default function CreerSite() {
 
           {erreurPublication && (
             <p className="text-xs font-medium mb-3" style={{ color: T.rouge }}>{erreurPublication}</p>
+          )}
+          {sessionExpiree && (
+            <button onClick={() => router.push(`/connexion?retour=${encodeURIComponent("/creer?reprise=1")}`)}
+              className="w-full flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold mb-3" style={{ background: T.jaune, color: T.bleuFonce }}>
+              Se reconnecter <ArrowRight size={15} />
+            </button>
           )}
 
           <div className="flex flex-col items-end gap-2.5">

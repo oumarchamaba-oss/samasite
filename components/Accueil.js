@@ -265,6 +265,10 @@ export default function Accueil({ clients }) {
               <Lock size={11} /> Espace partenaire
             </Link>
           </div>
+          <div className="flex items-center justify-center gap-4 mt-4">
+            <Link href="/confidentialite" className="text-xs" style={{ color: T.gris }}>Politique de confidentialité</Link>
+            <Link href="/cgu" className="text-xs" style={{ color: T.gris }}>CGU</Link>
+          </div>
         </div>
       </div>
     </div>

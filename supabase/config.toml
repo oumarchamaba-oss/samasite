@@ -1,0 +1,46 @@
+# Configuration du projet Supabase (CLI).
+# Généré pour préparer la portabilité vers une instance self-hosted.
+# Voir https://supabase.com/docs/guides/local-development/cli/config
+
+project_id = "sama-site"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+# En self-hosted, remplacez par l'URL publique réelle de votre application
+# (ex. https://samasite.com). C'est cette valeur, combinée aux "Redirect URLs"
+# ci-dessous, qui doit correspondre à ce que vous configurez dans Google Cloud
+# Console (Authorized redirect URIs) pour la connexion Google.
+site_url = "https://samasite.com"
+additional_redirect_urls = ["https://samasite.com", "https://www.samasite.com", "http://localhost:3000"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+# Sur le Cloud, Supabase envoie les e-mails de confirmation via son propre
+# service. En self-hosted, il n'y a PAS de service d'e-mail par défaut : il
+# faut configurer un serveur SMTP (voir README_DEPLOIEMENT.md et le résumé
+# de migration) sous peine que les e-mails de confirmation d'inscription ne
+# partent jamais.
+double_confirm_changes = true
+enable_confirmations = true
+
+[auth.external.google]
+enabled = true
+client_id = "env(GOOGLE_OAUTH_CLIENT_ID)"
+secret = "env(GOOGLE_OAUTH_CLIENT_SECRET)"

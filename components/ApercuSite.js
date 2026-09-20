@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import { MessageCircle, Mail, MapPin, ExternalLink, Menu } from "lucide-react";
-import { T, SECTEUR_COULEURS, RESEAUX_SOCIAUX, MODES_LIVRAISON, genererSchema, trouverMetier, trouverIconeMetier, assombrir, paletteIdPour } from "../lib/data";
+import { MessageCircle, Mail, MapPin, ExternalLink, Menu, Clock } from "lucide-react";
+import { T, SECTEUR_COULEURS, RESEAUX_SOCIAUX, MODES_LIVRAISON, genererSchema, trouverMetier, trouverIconeMetier, assombrir, paletteIdPour, formaterHoraires } from "../lib/data";
 
 function normaliserItems(rawItems) {
   return (rawItems || []).map((it) => typeof it === "string" ? { texte: it, image: null, description: "", prix: "", categorie: "" } : { image: null, description: "", prix: "", categorie: "", ...it });
@@ -18,6 +18,7 @@ export default function ApercuSite({ secteur, business, paye }) {
   const modesDispo = (business.modesLivraison && business.modesLivraison.length ? business.modesLivraison : secteur.modesLivraison) || [];
   const [modeCommande, setModeCommande] = useState(modesDispo[0] || null);
   const reseauxActifs = RESEAUX_SOCIAUX.filter((r) => business.reseaux?.[r.id]?.trim());
+  const horairesFormates = formaterHoraires(business.horaires);
   const demoMetier = business.metier ? trouverMetier(business.metier)?.demo : null;
   const demoActif = demoMetier || secteur.demo;
   const p = business.couleurs || genererSchema(SECTEUR_COULEURS[paletteIdPour(secteur, business)][0].hex);
@@ -98,6 +99,16 @@ export default function ApercuSite({ secteur, business, paye }) {
             <div className="flex items-center gap-2">{business.logo ? <img src={business.logo} alt="" className="w-7 h-7 rounded-lg object-contain bg-white/10" /> : <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/10"><Icon size={13} color="#fff" /></div>}<span className="text-sm font-bold text-white">{nom}</span></div>
             <div className="flex gap-4 mt-4 text-[10px] text-white/70"><a href="#accueil">Accueil</a><a href="#produits">{catalogueLabel}</a><a href="#contact">Contact</a></div>
             <div className="mt-4 space-y-2">{business.whatsapp && <a href={generalWa} target="_blank" rel="noopener noreferrer" className="flex gap-2 items-center text-[10px] text-white/80"><MessageCircle size={11} />{business.whatsapp}</a>}{business.email && <a href={`mailto:${business.email}`} className="flex gap-2 items-center text-[10px] text-white/80"><Mail size={11} />{business.email}</a>}{business.adresse && <div className="flex gap-2 items-start text-[10px] text-white/80"><MapPin size={11} className="mt-0.5" />{business.adresse}</div>}{business.lienGoogleMaps && <a href={business.lienGoogleMaps} target="_blank" rel="noopener noreferrer" className="inline-flex gap-1 items-center mt-1 text-[9px] text-white/65"><ExternalLink size={10} /> Google Maps</a>}</div>
+            {horairesFormates.length > 0 && (
+              <div className="mt-4 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.12)" }}>
+                <p className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: "rgba(255,255,255,0.5)" }}><Clock size={10} /> Horaires</p>
+                {horairesFormates.map((h, i) => (
+                  <div key={i} className="flex justify-between text-[10px] text-white/75 py-0.5">
+                    <span>{h.label}</span><span>{h.texte}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             {reseauxActifs.length > 0 && <div className="flex gap-2 mt-4">{reseauxActifs.map((r) => { const RIcon = r.icon; return <a key={r.id} href={business.reseaux[r.id]} target="_blank" rel="noopener noreferrer" aria-label={r.label || r.id} className="w-7 h-7 rounded-full flex items-center justify-center bg-white/10"><RIcon size={13} color="#fff" /></a>; })}</div>}
             <p className="mt-6 pt-4 border-t border-white/10 text-[9px] text-white/40">© {new Date().getFullYear()} {nom}. Tous droits réservés.{!paye ? " · Créé avec Sama Site" : ""}</p>
           </footer>

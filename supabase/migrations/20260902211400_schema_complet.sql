@@ -1,4 +1,20 @@
 -- ============================================================
+-- Migration consolidée — état complet du schéma au 2 septembre 2026
+-- ============================================================
+-- Ce fichier régénère l'intégralité du schéma en une seule migration,
+-- pour un déploiement propre sur une instance Supabase neuve (y compris
+-- self-hosted). Il remplace l'historique des anciens fichiers
+-- schema.sql + migration_comptes.sql + migration_securite_notifications.sql
+-- + migration_horaires.sql (conservés à la racine de supabase/ à titre
+-- d'archive/historique, mais ne plus les exécuter séparément — tout leur
+-- contenu est déjà inclus ici).
+--
+-- Sur une base DÉJÀ existante (Supabase Cloud actuel), continuez à
+-- utiliser les fichiers de migration individuels comme avant : cette
+-- version consolidée est prévue pour une INSTALLATION NEUVE (ex. self-hosted).
+-- ============================================================
+
+-- ============================================================
 -- SAMA SITE — Schéma de base de données (Supabase / PostgreSQL)
 -- ============================================================
 -- À exécuter dans : Supabase > votre projet > SQL Editor > New query

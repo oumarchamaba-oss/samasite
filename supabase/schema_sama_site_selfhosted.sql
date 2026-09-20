@@ -1,11 +1,35 @@
 -- ============================================================
--- SAMA SITE — Schéma de base de données (Supabase / PostgreSQL)
+-- SAMA SITE — Schéma DÉDIÉ pour l'instance Supabase self-hosted
+-- partagée du VPS Wanekoo (db.samasite.online)
 -- ============================================================
--- À exécuter dans : Supabase > votre projet > SQL Editor > New query
--- Copiez-collez tout ce fichier, puis cliquez sur "Run".
+-- À NE PAS exécuter sur le projet Supabase Cloud actuel (production) :
+-- celui-ci utilise encore le schéma "public" (voir supabase/schema.sql).
+-- Ce fichier isole Sama Site dans son propre schéma Postgres "sama_site",
+-- pour cohabiter proprement avec les autres apps hébergées sur le même
+-- VPS (ex: souleymane-agne) sans jamais toucher à leurs tables/policies.
+--
+-- À exécuter sur le VPS, une fois connecté en SSH :
+--   cd ~/supabase/docker
+--   docker compose exec -T db psql -U postgres -d postgres < schema_sama_site_selfhosted.sql
+-- (ou : Supabase Studio > SQL Editor > coller tout le fichier > Run)
+--
+-- Après exécution, deux étapes RESTENT nécessaires côté VPS (voir le
+-- message qui accompagne ce fichier) :
+--   1. Exposer le schéma "sama_site" à l'API (PGRST_DB_SCHEMAS dans .env
+--      + redémarrage du conteneur "rest").
+--   2. Créer le compte admin (oumarchamaba@gmail.com) via Auth Admin API
+--      ou Studio > Authentication > Add user.
+
+create schema if not exists sama_site;
+
+-- Les rôles utilisés par l'API (PostgREST) doivent pouvoir "voir" le
+-- schéma avant même que RLS n'entre en jeu — ce n'est PAS automatique
+-- pour un schéma custom (contrairement à "public", que Supabase
+-- configure par défaut à la création d'un projet).
+grant usage on schema sama_site to anon, authenticated, service_role;
 
 -- Table des sites créés par les clients
-create table if not exists sites (
+create table if not exists sama_site.sites (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
@@ -65,9 +89,9 @@ create table if not exists sites (
 );
 
 -- Table des demandes de renouvellement / relance (historique)
-create table if not exists relances (
+create table if not exists sama_site.relances (
   id uuid primary key default gen_random_uuid(),
-  site_id uuid references sites(id) on delete cascade,
+  site_id uuid references sama_site.sites(id) on delete cascade,
   created_at timestamptz default now(),
   canal text check (canal in ('whatsapp', 'email')),
   note text
@@ -76,9 +100,9 @@ create table if not exists relances (
 -- Historique des paiements : chaque commande initiale ET chaque renouvellement
 -- crée une ligne ici. C'est cette table qui alimente les factures/reçus et
 -- permet de savoir précisément ce qui a été payé, quand, et comment.
-create table if not exists paiements (
+create table if not exists sama_site.paiements (
   id uuid primary key default gen_random_uuid(),
-  site_id uuid references sites(id) on delete cascade,
+  site_id uuid references sama_site.sites(id) on delete cascade,
   created_at timestamptz default now(),
 
   type text not null default 'initial' check (type in ('initial', 'renouvellement')),
@@ -101,51 +125,59 @@ create table if not exists paiements (
 -- ============================================================
 -- Sécurité : Row Level Security (RLS)
 -- ============================================================
--- Modèle revu pour supporter de vrais comptes clients (plusieurs sites par
--- utilisateur) en plus de l'admin. Important : depuis que les clients ont
--- aussi des comptes "authenticated", on ne peut plus donner un accès total
--- à "authenticated" comme avant (ça donnerait à chaque client l'accès aux
--- sites de tous les autres) — chaque policy authentifiée est donc limitée à
--- "mes propres sites, ou moi si je suis l'administrateur".
+-- Modèle identique à supabase/schema.sql, seulement re-schématisé pour
+-- sama_site. Voir ce fichier pour le détail des choix de sécurité.
 
-alter table sites enable row level security;
-alter table relances enable row level security;
-alter table paiements enable row level security;
+alter table sama_site.sites enable row level security;
+alter table sama_site.relances enable row level security;
+alter table sama_site.paiements enable row level security;
 
 -- Fonction utilitaire : suis-je l'administrateur ? (un seul compte admin pour
 -- l'instant — ajoutez d'autres e-mails dans le tableau si besoin plus tard).
-create or replace function is_admin()
+create or replace function sama_site.is_admin()
 returns boolean
 language sql
 stable
+set search_path = sama_site, public, extensions
 as $$
   select coalesce(auth.jwt() ->> 'email', '') in ('oumarchamaba@gmail.com');
 $$;
-grant execute on function is_admin to anon, authenticated;
+grant execute on function sama_site.is_admin to anon, authenticated;
+
+-- Privilèges de base sur les tables : PostgREST/les clients ont besoin d'un
+-- GRANT table-level pour même TENTER la requête — RLS filtre ensuite QUELLES
+-- lignes sont réellement visibles/modifiables. "anon" n'a volontairement
+-- AUCUN accès direct aux tables : il passe uniquement par les fonctions
+-- "security definer" plus bas (creer_site_public, obtenir_site_par_jeton,
+-- modifier_site_par_jeton), exactement comme dans schema.sql (public).
+grant select, insert on sama_site.sites to authenticated;
+grant select, insert, update, delete on sama_site.relances to authenticated;
+grant select, insert, update, delete on sama_site.paiements to authenticated;
+grant all privileges on all tables in schema sama_site to service_role;
 
 -- Un utilisateur connecté peut créer un site directement rattaché à son propre
 -- compte (parcours "création avec compte"). La création SANS compte passe par
 -- la fonction creer_site_public() ci-dessous, pas par cette policy.
 create policy "Un compte peut créer son propre site"
-  on sites for insert
+  on sama_site.sites for insert
   to authenticated
   with check (user_id = auth.uid());
 
 -- Chacun ne lit que ses propres sites ; l'administrateur lit tout.
 create policy "Lecture de ses propres sites (ou admin)"
-  on sites for select
+  on sama_site.sites for select
   to authenticated
-  using (user_id = auth.uid() or is_admin());
+  using (user_id = auth.uid() or sama_site.is_admin());
 
 -- Modification limitée à ses propres sites, ET seulement s'ils sont encore
 -- dans la fenêtre autorisée (essai en cours, ou abonnement actif). Passé ce
 -- délai, plus aucune écriture n'est possible tant que l'admin n'a pas
 -- confirmé un paiement (qui, lui, passe toujours — is_admin() prioritaire).
 create policy "Modification de ses sites actifs (ou admin)"
-  on sites for update
+  on sama_site.sites for update
   to authenticated
   using (
-    is_admin()
+    sama_site.is_admin()
     or (
       user_id = auth.uid()
       and (
@@ -154,7 +186,7 @@ create policy "Modification de ses sites actifs (ou admin)"
       )
     )
   )
-  with check (user_id = auth.uid() or is_admin());
+  with check (user_id = auth.uid() or sama_site.is_admin());
 
 -- Restriction supplémentaire, INDÉPENDANTE de la policy ci-dessus : la policy
 -- RLS décide QUELLES LIGNES peuvent être touchées, mais pas QUELLES COLONNES.
@@ -166,18 +198,18 @@ create policy "Modification de ses sites actifs (ou admin)"
 -- paiement : elles ne sont plus modifiables que via les fonctions "security
 -- definer" ci-dessous (soumettre_paiement_manuel, confirmer_paiement_admin),
 -- qui appliquent les bonnes règles (transition autorisée, ou admin requis).
-revoke update on sites from authenticated;
+revoke update on sama_site.sites from authenticated;
 grant update (
   nom_entreprise, contact_nom, whatsapp, email, adresse, lien_google_maps,
   accroche, logo_url, banniere_url, couleurs, produits, reseaux,
   modes_livraison, metier, metier_groupe, horaires, derniere_modification_client_le
-) on sites to authenticated;
+) on sama_site.sites to authenticated;
 
 -- Soumet une intention de paiement manuel (étape 5, "j'ai déjà envoyé
 -- l'argent") pour un site qu'on possède. Autorise uniquement la transition
 -- "essai" -> "a_livrer", jamais "actif" — l'activation reste réservée à
 -- l'administrateur via confirmer_paiement_admin().
-create or replace function soumettre_paiement_manuel(
+create or replace function sama_site.soumettre_paiement_manuel(
   p_site_id uuid,
   p_contact_nom text,
   p_extension text,
@@ -186,26 +218,26 @@ create or replace function soumettre_paiement_manuel(
   p_moyen_paiement text,
   p_domaine text
 )
-returns setof sites
+returns setof sama_site.sites
 language plpgsql
 security definer
-set search_path = public
+set search_path = sama_site, public, extensions
 as $$
 declare
-  v_site sites%rowtype;
+  v_site sama_site.sites%rowtype;
 begin
-  select * into v_site from sites where id = p_site_id;
+  select * into v_site from sama_site.sites where id = p_site_id;
   if not found then
     raise exception 'Site introuvable.';
   end if;
-  if v_site.user_id is distinct from auth.uid() and not is_admin() then
+  if v_site.user_id is distinct from auth.uid() and not sama_site.is_admin() then
     raise exception 'Ce site ne vous appartient pas.';
   end if;
   if v_site.statut <> 'essai' then
     raise exception 'Cette commande a déjà été soumise.';
   end if;
 
-  update sites set
+  update sama_site.sites set
     statut = 'a_livrer',
     contact_nom = coalesce(p_contact_nom, contact_nom),
     extension = p_extension,
@@ -216,70 +248,67 @@ begin
     updated_at = now()
   where id = p_site_id;
 
-  return query select * from sites where id = p_site_id;
+  return query select * from sama_site.sites where id = p_site_id;
 end;
 $$;
-grant execute on function soumettre_paiement_manuel to authenticated;
+grant execute on function sama_site.soumettre_paiement_manuel to authenticated;
 
 -- Confirme un paiement et active un site — réservé à l'administrateur.
 -- Remplace toute écriture directe de "statut"/"paiement_confirme" par le
 -- dashboard, désormais bloquée par la restriction de colonnes ci-dessus.
-create or replace function confirmer_paiement_admin(
+create or replace function sama_site.confirmer_paiement_admin(
   p_site_id uuid,
   p_abonnement_expire_le timestamptz
 )
-returns setof sites
+returns setof sama_site.sites
 language plpgsql
 security definer
-set search_path = public
+set search_path = sama_site, public, extensions
 as $$
 begin
-  if not is_admin() then
+  if not sama_site.is_admin() then
     raise exception 'Réservé à l''administrateur.';
   end if;
 
-  update sites set
+  update sama_site.sites set
     statut = 'actif',
     paiement_confirme = true,
     abonnement_expire_le = p_abonnement_expire_le,
     updated_at = now()
   where id = p_site_id;
 
-  return query select * from sites where id = p_site_id;
+  return query select * from sama_site.sites where id = p_site_id;
 end;
 $$;
-grant execute on function confirmer_paiement_admin to authenticated;
+grant execute on function sama_site.confirmer_paiement_admin to authenticated;
 
 -- Marque un site comme livré (fichier téléchargé / hébergé ailleurs) — utilisé
 -- pour savoir si le client a modifié son site DEPUIS cette livraison, et donc
 -- si l'admin doit re-télécharger et remettre le fichier à jour.
-create or replace function marquer_site_livre(p_site_id uuid)
-returns setof sites
+create or replace function sama_site.marquer_site_livre(p_site_id uuid)
+returns setof sama_site.sites
 language plpgsql
 security definer
-set search_path = public
+set search_path = sama_site, public, extensions
 as $$
 begin
-  if not is_admin() then
+  if not sama_site.is_admin() then
     raise exception 'Réservé à l''administrateur.';
   end if;
 
-  update sites set derniere_livraison_le = now() where id = p_site_id;
-  return query select * from sites where id = p_site_id;
+  update sama_site.sites set derniere_livraison_le = now() where id = p_site_id;
+  return query select * from sama_site.sites where id = p_site_id;
 end;
 $$;
-grant execute on function marquer_site_livre to authenticated;
+grant execute on function sama_site.marquer_site_livre to authenticated;
 
 -- Note : il n'existe volontairement AUCUNE policy anonyme sur "sites" (ni
 -- select, ni insert, ni update). Un visiteur non connecté qui crée un site
 -- passe par creer_site_public(), le consulte via obtenir_site_par_jeton(),
 -- et le modifie via modifier_site_par_jeton() — trois fonctions "security
--- definer" ci-dessous. C'est plus sûr qu'une policy générale "using (true)" :
--- le jeton (edit_token) doit être fourni EXACTEMENT en paramètre de fonction
--- pour donner accès à quoi que ce soit ; une policy RLS ne peut pas vérifier
--- "le bon jeton a été fourni", seulement des conditions sur la ligne elle-même.
+-- definer" ci-dessous.
 
-create or replace function creer_site_public(
+create or replace function sama_site.creer_site_public(
   p_nom_entreprise text,
   p_contact_nom text,
   p_whatsapp text,
@@ -301,13 +330,13 @@ create or replace function creer_site_public(
 returns table (id uuid, edit_token uuid)
 language plpgsql
 security definer
-set search_path = public
+set search_path = sama_site, public, extensions
 as $$
 declare
   v_id uuid;
   v_token uuid := gen_random_uuid();
 begin
-  insert into sites (
+  insert into sama_site.sites (
     nom_entreprise, contact_nom, whatsapp, email, adresse, lien_google_maps,
     secteur_id, metier, metier_groupe, accroche, logo_url, banniere_url,
     couleurs, produits, reseaux, modes_livraison, horaires,
@@ -318,45 +347,39 @@ begin
     coalesce(p_couleurs, '{}'::jsonb), coalesce(p_produits, '[]'::jsonb),
     coalesce(p_reseaux, '{}'::jsonb), coalesce(p_modes_livraison, '[]'::jsonb), p_horaires,
     'essai', now() + interval '2 days', v_token, now() + interval '2 days'
-  ) returning sites.id into v_id;
+  ) returning sama_site.sites.id into v_id;
 
   return query select v_id, v_token;
 end;
 $$;
-grant execute on function creer_site_public to anon, authenticated;
+grant execute on function sama_site.creer_site_public to anon, authenticated;
 
 -- Retrouve un site par son jeton d'édition (utilisé par "Mon espace" et par
--- la page /site/[jeton] pour un visiteur non connecté). Ne vérifie pas la
--- date d'expiration ici : on veut pouvoir AFFICHER le statut même après
--- expiration (pour proposer un renouvellement) — seule la MODIFICATION est
--- bloquée après expiration, dans la fonction suivante.
-create or replace function obtenir_site_par_jeton(p_token uuid)
-returns setof sites
+-- la page /site/[jeton] pour un visiteur non connecté).
+create or replace function sama_site.obtenir_site_par_jeton(p_token uuid)
+returns setof sama_site.sites
 language sql
 security definer
-set search_path = public
+set search_path = sama_site, public, extensions
 stable
 as $$
-  select * from sites where edit_token = p_token;
+  select * from sama_site.sites where edit_token = p_token;
 $$;
-grant execute on function obtenir_site_par_jeton to anon, authenticated;
+grant execute on function sama_site.obtenir_site_par_jeton to anon, authenticated;
 
 -- Modifie un site via son jeton, en respectant les mêmes règles de fenêtre
--- que pour un compte (essai en cours, ou abonnement actif). Le champ "statut"
--- n'est accepté que pour la seule transition légitime côté client : passer de
--- "essai" à "a_livrer" (commande de paiement manuel à l'étape 5) — jamais vers
--- "actif", qui reste réservé à la confirmation par l'administrateur.
-create or replace function modifier_site_par_jeton(p_token uuid, p_champs jsonb)
-returns setof sites
+-- que pour un compte (essai en cours, ou abonnement actif).
+create or replace function sama_site.modifier_site_par_jeton(p_token uuid, p_champs jsonb)
+returns setof sama_site.sites
 language plpgsql
 security definer
-set search_path = public
+set search_path = sama_site, public, extensions
 as $$
 declare
-  v_site sites%rowtype;
+  v_site sama_site.sites%rowtype;
   v_autorise boolean;
 begin
-  select * into v_site from sites where edit_token = p_token;
+  select * into v_site from sama_site.sites where edit_token = p_token;
   if not found then
     raise exception 'Lien invalide ou expiré.';
   end if;
@@ -369,7 +392,7 @@ begin
     raise exception 'Ce site n''a plus les droits de modification (essai ou abonnement expiré).';
   end if;
 
-  update sites set
+  update sama_site.sites set
     nom_entreprise   = coalesce(p_champs->>'nom_entreprise', nom_entreprise),
     contact_nom      = coalesce(p_champs->>'contact_nom', contact_nom),
     whatsapp         = coalesce(p_champs->>'whatsapp', whatsapp),
@@ -400,28 +423,28 @@ begin
     derniere_modification_client_le = now()
   where id = v_site.id;
 
-  return query select * from sites where id = v_site.id;
+  return query select * from sama_site.sites where id = v_site.id;
 end;
 $$;
-grant execute on function modifier_site_par_jeton to anon, authenticated;
+grant execute on function sama_site.modifier_site_par_jeton to anon, authenticated;
 
 -- Rattache un site (créé sans compte) au compte de l'utilisateur actuellement
 -- connecté — utilisée quand quelqu'un se connecte ou s'inscrit depuis la page
 -- /site/[jeton]. Refuse si le site appartient déjà à quelqu'un d'autre.
-create or replace function rattacher_site(p_token uuid)
+create or replace function sama_site.rattacher_site(p_token uuid)
 returns uuid
 language plpgsql
 security definer
-set search_path = public
+set search_path = sama_site, public, extensions
 as $$
 declare
-  v_site sites%rowtype;
+  v_site sama_site.sites%rowtype;
 begin
   if auth.uid() is null then
     raise exception 'Connexion requise pour récupérer ce site.';
   end if;
 
-  select * into v_site from sites where edit_token = p_token;
+  select * into v_site from sama_site.sites where edit_token = p_token;
   if not found then
     raise exception 'Lien invalide ou expiré.';
   end if;
@@ -430,50 +453,48 @@ begin
     raise exception 'Ce site est déjà rattaché à un autre compte.';
   end if;
 
-  update sites set user_id = auth.uid() where id = v_site.id;
+  update sama_site.sites set user_id = auth.uid() where id = v_site.id;
   return v_site.id;
 end;
 $$;
-grant execute on function rattacher_site to authenticated;
+grant execute on function sama_site.rattacher_site to authenticated;
 
 -- Liste publique restreinte (nom, secteur, statut uniquement) pour la section
--- "Ils ont créé leur site avec Sama Site" de la page d'accueil — remplace
--- l'ancienne policy générale "select using (true))" par une fonction qui
--- n'expose jamais les coordonnées des clients (WhatsApp, e-mail, adresse...).
-create or replace function sites_publics()
+-- "Ils ont créé leur site avec Sama Site" de la page d'accueil.
+create or replace function sama_site.sites_publics()
 returns table (nom_entreprise text, secteur_id text, statut text)
 language sql
 security definer
-set search_path = public
+set search_path = sama_site, public, extensions
 stable
 as $$
   select nom_entreprise, secteur_id, statut
-  from sites
+  from sama_site.sites
   where statut <> 'expire'
   order by created_at desc
   limit 30;
 $$;
-grant execute on function sites_publics to anon, authenticated;
+grant execute on function sama_site.sites_publics to anon, authenticated;
 
 -- Relances et paiements : réservés à l'administrateur uniquement (les clients
 -- n'y accèdent jamais directement, ni en lecture ni en écriture).
 create policy "Admin gère les relances"
-  on relances for all
+  on sama_site.relances for all
   to authenticated
-  using (is_admin())
-  with check (is_admin());
+  using (sama_site.is_admin())
+  with check (sama_site.is_admin());
 
 create policy "Admin gère les paiements"
-  on paiements for all
+  on sama_site.paiements for all
   to authenticated
-  using (is_admin())
-  with check (is_admin());
+  using (sama_site.is_admin())
+  with check (sama_site.is_admin());
 
 -- Index utiles
-create index if not exists idx_sites_statut on sites(statut);
-create index if not exists idx_sites_created_at on sites(created_at desc);
-create index if not exists idx_sites_abonnement_expire on sites(abonnement_expire_le);
-create index if not exists idx_sites_user on sites(user_id);
-create index if not exists idx_sites_edit_token on sites(edit_token);
-create index if not exists idx_paiements_site on paiements(site_id);
-create index if not exists idx_paiements_statut on paiements(statut);
+create index if not exists idx_sites_statut on sama_site.sites(statut);
+create index if not exists idx_sites_created_at on sama_site.sites(created_at desc);
+create index if not exists idx_sites_abonnement_expire on sama_site.sites(abonnement_expire_le);
+create index if not exists idx_sites_user on sama_site.sites(user_id);
+create index if not exists idx_sites_edit_token on sama_site.sites(edit_token);
+create index if not exists idx_paiements_site on sama_site.paiements(site_id);
+create index if not exists idx_paiements_statut on sama_site.paiements(statut);

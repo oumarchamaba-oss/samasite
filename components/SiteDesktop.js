@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import { MessageCircle, Phone, Mail, MapPin, ExternalLink } from "lucide-react";
-import { T, SECTEUR_COULEURS, RESEAUX_SOCIAUX, MODES_LIVRAISON, genererSchema, trouverMetier, trouverIconeMetier, assombrir, paletteIdPour } from "../lib/data";
+import { MessageCircle, Phone, Mail, MapPin, ExternalLink, Clock } from "lucide-react";
+import { T, SECTEUR_COULEURS, RESEAUX_SOCIAUX, MODES_LIVRAISON, genererSchema, trouverMetier, trouverIconeMetier, assombrir, paletteIdPour, formaterHoraires } from "../lib/data";
 
 function normaliserItems(rawItems) {
   return (rawItems || []).map((it) => typeof it === "string"
@@ -22,6 +22,7 @@ export default function SiteDesktop({ secteur, business, paye }) {
   const [modeCommande, setModeCommande] = useState(modesDispo[0] || null);
   const demoMetier = business.metier ? trouverMetier(business.metier)?.demo : null;
   const demoActif = demoMetier || secteur.demo;
+  const horairesFormates = formaterHoraires(business.horaires);
   const p = business.couleurs || genererSchema(SECTEUR_COULEURS[paletteIdPour(secteur, business)][0].hex);
   const nom = business.nom || demoActif.nom;
   const accroche = business.accroche || demoActif.accroche;
@@ -177,6 +178,16 @@ export default function SiteDesktop({ secteur, business, paye }) {
                 {business.adresse && <div className="flex items-start gap-2 text-sm text-white/80"><MapPin size={15} className="mt-0.5 shrink-0" /> {business.adresse}</div>}
               </div>
               {business.lienGoogleMaps && <a href={business.lienGoogleMaps} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-4 text-xs font-semibold text-white/70"><ExternalLink size={12} /> Voir sur Google Maps</a>}
+              {horairesFormates.length > 0 && (
+                <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.12)" }}>
+                  <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white/45 mb-2"><Clock size={12} /> Horaires</p>
+                  {horairesFormates.map((h, i) => (
+                    <div key={i} className="flex justify-between gap-3 text-xs text-white/75 py-0.5">
+                      <span>{h.label}</span><span>{h.texte}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <div className="mt-10 pt-5 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">

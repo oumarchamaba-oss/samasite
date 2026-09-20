@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sparkles, X, Menu } from "lucide-react";
-import { T, LOGO_SAMASITE, DrapeauSenegal } from "../lib/data";
+import { T, LOGO_SAMASITE, DrapeauSenegal, WHATSAPP_SUPPORT, WHATSAPP_AVATAR } from "../lib/data";
 
 export default function NavPublic() {
   const [menuOuvert, setMenuOuvert] = useState(false);
@@ -32,6 +32,11 @@ export default function NavPublic() {
               {l.label}
             </Link>
           ))}
+          <a href={`https://wa.me/${WHATSAPP_SUPPORT}`} target="_blank" rel="noopener noreferrer" title="Contactez-nous sur WhatsApp"
+            className="relative ml-1 shrink-0">
+            <img src={WHATSAPP_AVATAR} alt="Assistance Sama Site sur WhatsApp" className="w-9 h-9 rounded-full object-cover" style={{ border: "2px solid #25D366" }} />
+            <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center" style={{ background: "#25D366", border: "1.5px solid #fff" }} />
+          </a>
           <Link
             href="/creer"
             className="ml-2 flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-bold"
@@ -41,9 +46,15 @@ export default function NavPublic() {
           </Link>
         </div>
 
-        <button className="sm:hidden" onClick={() => setMenuOuvert((v) => !v)} aria-label={menuOuvert ? "Fermer le menu" : "Ouvrir le menu"}>
-          {menuOuvert ? <X size={22} color={T.encre} /> : <Menu size={22} color={T.encre} />}
-        </button>
+        <div className="flex items-center gap-3 sm:hidden">
+          <a href={`https://wa.me/${WHATSAPP_SUPPORT}`} target="_blank" rel="noopener noreferrer" title="Contactez-nous sur WhatsApp" className="relative shrink-0">
+            <img src={WHATSAPP_AVATAR} alt="Assistance Sama Site sur WhatsApp" className="w-8 h-8 rounded-full object-cover" style={{ border: "2px solid #25D366" }} />
+            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full" style={{ background: "#25D366", border: "1.5px solid #fff" }} />
+          </a>
+          <button onClick={() => setMenuOuvert((v) => !v)} aria-label={menuOuvert ? "Fermer le menu" : "Ouvrir le menu"}>
+            {menuOuvert ? <X size={22} color={T.encre} /> : <Menu size={22} color={T.encre} />}
+          </button>
+        </div>
       </div>
 
       {menuOuvert && (

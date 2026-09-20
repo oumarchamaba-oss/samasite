@@ -25,18 +25,34 @@ Comptez environ 45 minutes la première fois. Tout ce qui est listé ici est
 3. Cochez "Auto Confirm User" pour ne pas avoir à confirmer par e-mail.
 4. Cliquez sur **Create user**. C'est avec cet e-mail et ce mot de passe que vous vous connecterez sur `/admin/login`.
 
-## Étape 2 bis — Activer l'assistant IA (facultatif mais recommandé)
+## Étape 2 bis — Activer l'assistant IA, gratuitement (Google Gemini)
 
-L'assistant "Améliorer avec l'IA" (reformulation de texte) a besoin d'une clé API Anthropic pour fonctionner une fois le site déployé.
+L'assistant "Améliorer avec l'IA" (reformulation de texte) utilise Google Gemini, qui offre un vrai tarif gratuit permanent (1 500 reformulations par jour, aucune carte bancaire requise) — largement suffisant pour ce site.
 
-1. Allez sur https://console.anthropic.com et connectez-vous (ou créez un compte).
-2. Menu **Settings** → **API Keys** → **Create Key**. Copiez la clé (elle commence par `sk-ant-...`).
-3. Cette clé est payante à l'usage (facturée par Anthropic selon le nombre de reformulations demandées) — vous devrez ajouter un moyen de paiement sur le compte Anthropic pour que la clé fonctionne.
-4. Vous ajouterez cette clé comme variable d'environnement `ANTHROPIC_API_KEY` à l'étape 5 (Vercel) — **jamais** dans le code, ni avec le préfixe `NEXT_PUBLIC_`.
+1. Allez sur https://aistudio.google.com/app/apikey et connectez-vous avec un compte Google.
+2. Cliquez sur **Create API Key** (ou **Get API Key** selon la version de l'interface).
+3. Copiez la clé (elle commence par `AIza...`).
+4. Vous ajouterez cette clé comme variable d'environnement `GEMINI_API_KEY` à l'étape 5 (Vercel) — **jamais** dans le code, ni avec le préfixe `NEXT_PUBLIC_`.
+
+**Point à connaître** : sur ce tarif gratuit, Google peut utiliser vos échanges (les textes envoyés et générés) pour améliorer ses modèles — ce n'est pas le cas sur un compte payant. Pour de la reformulation de texte marketing générique (accroches, noms de produits), ce n'est pas une vraie donnée sensible, mais c'est la différence à connaître.
 
 Si vous sautez cette étape, tout le reste du site fonctionne normalement — seul le bouton "Améliorer avec l'IA" affichera une erreur.
 
-## Étape 3 — Préparer le projet en local (optionnel mais recommandé)
+## Étape 2 ter — Comptes clients et Google (nouveau)
+
+Depuis cette version, vos clients peuvent créer un vrai compte (e-mail/mot de passe ou Google) pour gérer plusieurs sites. Deux choses à faire une seule fois :
+
+**1) Exécuter la migration SQL** — si votre projet Supabase existait déjà avant cette version, ouvrez `supabase/schema.sql` **si c'est un projet tout neuf**, ou `supabase/migration_comptes.sql` **si vous avez déjà une base existante** (elle ajoute les nouvelles colonnes/fonctions sans rien supprimer). Copiez-collez son contenu dans **SQL Editor > New query**, cliquez **Run**.
+
+**2) Activer la connexion Google (facultatif)** — sans cette étape, vos clients peuvent toujours créer un compte par e-mail/mot de passe ; Google est juste plus rapide pour eux :
+1. Allez sur [console.cloud.google.com](https://console.cloud.google.com), créez un projet (ou utilisez-en un existant)
+2. **APIs & Services → Credentials → Create Credentials → OAuth client ID** (type "Web application")
+3. Dans **Authorized redirect URIs**, ajoutez l'URL que Supabase vous indique (visible dans Supabase → **Authentication → Providers → Google**, généralement `https://VOTRE-PROJET.supabase.co/auth/v1/callback`)
+4. Copiez le **Client ID** et le **Client Secret** générés par Google
+5. Dans Supabase, **Authentication → Providers → Google**, activez-le et collez ces deux valeurs
+6. Dans **Authentication → URL Configuration**, vérifiez que votre **Site URL** correspond bien à votre adresse Vercel (ou votre domaine une fois branché)
+
+
 
 Si vous avez un ordinateur avec Node.js installé :
 
@@ -71,7 +87,7 @@ git push -u origin main
 3. Avant de cliquer sur "Deploy", ouvrez la section **Environment Variables** et ajoutez :
    - `NEXT_PUBLIC_SUPABASE_URL` = (votre valeur de l'étape 1)
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = (votre valeur de l'étape 1)
-   - `ANTHROPIC_API_KEY` = (votre valeur de l'étape 2 bis, si vous voulez activer l'assistant IA)
+   - `GEMINI_API_KEY` = (votre valeur de l'étape 2 bis, si vous voulez activer l'assistant IA — gratuit)
 4. Cliquez sur **Deploy**. Après 1-2 minutes, votre site est en ligne sur une adresse du type `sama-site.vercel.app`.
 
 ## Étape 6 — Brancher votre nom de domaine (samasite.com ou .sn)
