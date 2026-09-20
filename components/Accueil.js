@@ -7,6 +7,7 @@ import {
   WHATSAPP_SUPPORT, WHATSAPP_AVATAR, LOGO_SAMASITE, DrapeauSenegal, Badge,
 } from "../lib/data";
 import { IMG_HERO, IMG_TRUST1, IMG_TRUST2, IMG_TRUST3, IMG_TRUST4 } from "../lib/images";
+import { useReveal } from "../lib/useReveal";
 
 export default function Accueil({ clients }) {
   const [faqOuverte, setFaqOuverte] = useState(null);
@@ -32,12 +33,22 @@ export default function Accueil({ clients }) {
     return [...statiquesAvecDescription, ...dynamiques];
   }, [clients]);
 
+  const [heroTexteRef, heroTexteVisible] = useReveal();
+  const [heroImageRef, heroImageVisible] = useReveal();
+  const [pourquoiRef, pourquoiVisible] = useReveal();
+  const [commentRef, commentVisible] = useReveal();
+  const [categoriesRef, categoriesVisible] = useReveal();
+  const [confianceRef, confianceVisible] = useReveal();
+  const [tarifsRef, tarifsVisible] = useReveal();
+  const [faqRef, faqVisible] = useReveal();
+  const [ctaRef, ctaVisible] = useReveal();
+
   return (
     <div>
       {/* Hero */}
       <div className="max-w-5xl mx-auto px-5 pt-14 pb-16">
         <div className="grid md:grid-cols-2 gap-10 items-center">
-          <div className="text-center md:text-left">
+          <div ref={heroTexteRef} className={`reveal ${heroTexteVisible ? "reveal-visible" : ""} text-center md:text-left`}>
             <div className="inline-flex items-center gap-1.5 mb-5">
               <Badge tone="jaune"><Sparkles size={11} /> 2 jours d'essai gratuit, sans carte bancaire</Badge>
             </div>
@@ -48,34 +59,36 @@ export default function Accueil({ clients }) {
               Sama Site crée le mini-site de votre commerce, avec commande directe sur WhatsApp — sans savoir coder, sans agence.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center md:justify-start items-center">
-              <Link href="/creer" className="flex items-center gap-2 px-7 py-3.5 rounded-full text-sm font-bold" style={{ background: T.bleu, color: T.blanc }}>
+              <Link href="/creer" className="bouton-hover flex items-center gap-2 px-7 py-3.5 rounded-full text-sm font-bold" style={{ background: T.bleu, color: T.blanc }}>
                 Créer mon site gratuitement <ArrowRight size={16} />
               </Link>
               <button onClick={() => document.getElementById("categories")?.scrollIntoView({ behavior: "smooth" })}
-                className="px-7 py-3.5 rounded-full text-sm font-semibold" style={{ background: T.bleuClair, color: T.bleu }}>
+                className="bouton-hover px-7 py-3.5 rounded-full text-sm font-semibold" style={{ background: T.bleuClair, color: T.bleu }}>
                 Voir les catégories
               </button>
             </div>
           </div>
-          <div className="rounded-3xl overflow-hidden flex items-center justify-center p-4" style={{ background: T.bleuClair }}>
-            <img src={IMG_HERO} alt="Entrepreneure sénégalaise gérant son catalogue de produits sur Sama Site, depuis son téléphone et son ordinateur" className="w-full h-auto object-contain rounded-2xl" />
+          <div ref={heroImageRef} style={{ transitionDelay: "120ms" }} className={`reveal ${heroImageVisible ? "reveal-visible" : ""} rounded-3xl overflow-hidden flex items-center justify-center p-4`} >
+            <div className="w-full h-full flex items-center justify-center rounded-3xl" style={{ background: T.bleuClair }}>
+              <img src={IMG_HERO} alt="Entrepreneure sénégalaise gérant son catalogue de produits sur Sama Site, depuis son téléphone et son ordinateur" className="w-full h-auto object-contain rounded-2xl" />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Pourquoi Sama Site */}
-      <div className="max-w-5xl mx-auto px-5 py-14">
+      <div ref={pourquoiRef} className={`reveal ${pourquoiVisible ? "reveal-visible" : ""} max-w-5xl mx-auto px-5 py-14`}>
         <h2 className="text-2xl font-bold text-center mb-10" style={{ color: T.encre }}>Pourquoi Sama Site</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
           {[
-            { icon: LayoutTemplate, titre: "Modèles professionnels", texte: "9 secteurs d'activité, chacun avec son style adapté." },
+            { icon: LayoutTemplate, titre: "Modèles professionnels", texte: `${SECTEURS.length} secteurs d'activité, chacun avec son style adapté.` },
             { icon: PaletteIcon, titre: "Personnalisation facile", texte: "Couleurs, logo, produits et contenu, sans coder." },
             { icon: ShoppingCart, titre: "Commande WhatsApp intégrée", texte: "Vos clients commandent en un clic, où qu'ils soient." },
             { icon: Headphones, titre: "Support client 7j/7", texte: "Une question ? Une équipe vous répond sur WhatsApp." },
             { icon: Smartphone, titre: "100% responsive", texte: "Un rendu soigné, sur ordinateur comme sur smartphone." },
             { icon: ShieldCheck, titre: "Site hébergé et sécurisé", texte: "Votre site en ligne, sans vous soucier de la technique." },
           ].map((f, i) => (
-            <div key={i} className="rounded-2xl p-5" style={{ background: T.bleuClair }}>
+            <div key={i} className="carte-hover rounded-2xl p-5" style={{ background: T.bleuClair }}>
               <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-3" style={{ background: T.blanc }}>
                 <f.icon size={20} color={T.bleu} strokeWidth={1.8} />
               </div>
@@ -88,7 +101,7 @@ export default function Accueil({ clients }) {
 
       {/* Comment ça marche */}
       <div className="py-14" style={{ background: T.blanc }}>
-        <div className="max-w-5xl mx-auto px-5">
+        <div ref={commentRef} className={`reveal ${commentVisible ? "reveal-visible" : ""} max-w-5xl mx-auto px-5`}>
           <h2 className="text-2xl font-bold text-center mb-10" style={{ color: T.encre }}>Comment ça marche</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-4xl mx-auto">
             {COMMENT_CA_MARCHE.map((e, i) => {
@@ -101,7 +114,7 @@ export default function Accueil({ clients }) {
               ];
               const ton = tons[i % tons.length];
               return (
-                <div key={e.n} className="rounded-2xl p-5" style={{ background: ton.fond }}>
+                <div key={e.n} className="carte-hover rounded-2xl p-5" style={{ background: ton.fond }}>
                   <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-3" style={{ background: T.blanc }}>
                     <EtapeIcon size={20} color={ton.accent} strokeWidth={1.8} />
                   </div>
@@ -116,12 +129,12 @@ export default function Accueil({ clients }) {
       </div>
 
       {/* Catégories */}
-      <div id="categories" className="max-w-5xl mx-auto px-5 py-16">
+      <div id="categories" ref={categoriesRef} className={`reveal ${categoriesVisible ? "reveal-visible" : ""} max-w-5xl mx-auto px-5 py-16`}>
         <h2 className="text-2xl font-bold text-center mb-2" style={{ color: T.encre }}>Une catégorie pour chaque activité</h2>
         <p className="text-sm text-center mb-10" style={{ color: T.gris }}>Cliquez sur votre secteur pour commencer à créer votre site.</p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {SECTEURS.map((s) => (
-            <Link key={s.id} href={`/creer?secteur=${s.id}`} className="text-left rounded-2xl overflow-hidden transition-colors group block"
+            <Link key={s.id} href={`/creer?secteur=${s.id}`} className="carte-hover text-left rounded-2xl overflow-hidden transition-colors group block"
               style={{ background: T.blanc, border: `1.5px solid ${T.bleuClairBord}` }}>
               <div className="flex items-center justify-center p-4" style={{ background: "#F8FAFC", height: 140 }}>
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: s.couleurBadge }}>
@@ -131,7 +144,7 @@ export default function Accueil({ clients }) {
               <div className="p-5">
                 <div className="flex items-center justify-between gap-2">
                   <div className="font-semibold" style={{ color: T.encre }}>{s.label}</div>
-                  <ArrowRight size={16} color={T.bleu} className="shrink-0" />
+                  <ArrowRight size={16} color={T.bleu} className="shrink-0 transition-transform duration-200 group-hover:translate-x-1" />
                 </div>
                 <div className="text-xs mt-1" style={{ color: T.gris }}>{s.description}</div>
               </div>
@@ -142,7 +155,7 @@ export default function Accueil({ clients }) {
 
       {/* Confiance */}
       <div className="py-16" style={{ background: T.bleuFonce }}>
-        <div className="max-w-5xl mx-auto px-5">
+        <div ref={confianceRef} className={`reveal ${confianceVisible ? "reveal-visible" : ""} max-w-5xl mx-auto px-5`}>
           <h2 className="text-2xl font-bold text-center mb-2" style={{ color: T.blanc }}>Ils ont créé leur site avec Sama Site</h2>
           <p className="text-sm text-center mb-8" style={{ color: "rgba(255,255,255,0.6)" }}>
             Des commerces sénégalais qui utilisent déjà notre solution, en essai comme en abonnement.
@@ -156,7 +169,7 @@ export default function Accueil({ clients }) {
             {confianceComplete.map((c, i) => {
               const Icon = c.icon;
               return (
-                <div key={i} className="rounded-2xl p-4 flex items-start gap-3.5" style={{ background: "rgba(255,255,255,0.06)" }}>
+                <div key={i} className="carte-hover-sombre rounded-2xl p-4 flex items-start gap-3.5" style={{ background: "rgba(255,255,255,0.06)" }}>
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(250,204,21,0.15)" }}>
                     <Icon size={18} color={T.jaune} strokeWidth={2} />
                   </div>
@@ -173,11 +186,11 @@ export default function Accueil({ clients }) {
       </div>
 
       {/* Tarifs */}
-      <div className="max-w-5xl mx-auto px-5 py-16">
+      <div ref={tarifsRef} className={`reveal ${tarifsVisible ? "reveal-visible" : ""} max-w-5xl mx-auto px-5 py-16`}>
         <h2 className="text-2xl font-bold text-center mb-2" style={{ color: T.encre }}>Un tarif simple, une seule offre</h2>
         <p className="text-sm text-center mb-10" style={{ color: T.gris }}>Un essai gratuit, puis un abonnement clair avec votre domaine inclus.</p>
         <div className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-          <div className="rounded-2xl p-6" style={{ background: T.blanc, border: `2px solid ${T.bleuClairBord}` }}>
+          <div className="carte-hover rounded-2xl p-6" style={{ background: T.blanc, border: `2px solid ${T.bleuClairBord}` }}>
             <div className="font-bold" style={{ color: T.encre }}>Essai gratuit</div>
             <div className="flex items-baseline gap-1.5 mt-1">
               <span className="text-3xl font-bold" style={{ color: T.bleu }}>0 F</span>
@@ -193,7 +206,7 @@ export default function Accueil({ clients }) {
             </ul>
           </div>
 
-          <div className="rounded-2xl p-6 relative" style={{ background: T.blanc, border: `2px solid ${T.bleu}` }}>
+          <div className="carte-hover rounded-2xl p-6 relative" style={{ background: T.blanc, border: `2px solid ${T.bleu}` }}>
             <div className="absolute -top-3 left-6"><Badge tone="jaune"><Sparkles size={11} /> Site + domaine</Badge></div>
             <div className="font-bold" style={{ color: T.encre }}>Site en ligne</div>
             <div className="flex items-baseline gap-1.5 mt-1">
@@ -214,18 +227,23 @@ export default function Accueil({ clients }) {
 
       {/* FAQ */}
       <div className="py-16" style={{ background: T.bleuClair }}>
-        <div className="max-w-2xl mx-auto px-5">
+        <div ref={faqRef} className={`reveal ${faqVisible ? "reveal-visible" : ""} max-w-2xl mx-auto px-5`}>
           <h2 className="text-2xl font-bold text-center mb-10" style={{ color: T.encre }}>Questions fréquentes</h2>
           <div className="space-y-2.5">
             {FAQ.map((f, i) => {
               const ouvert = faqOuverte === i;
               return (
                 <div key={i} className="rounded-2xl overflow-hidden" style={{ background: T.blanc, border: `1.5px solid ${T.bleuClairBord}` }}>
-                  <button onClick={() => setFaqOuverte(ouvert ? null : i)} className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left">
+                  <button onClick={() => setFaqOuverte(ouvert ? null : i)} aria-expanded={ouvert}
+                    className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left transition-colors duration-200 hover:bg-black/[0.02]">
                     <span className="font-semibold text-sm" style={{ color: T.encre }}>{f.q}</span>
-                    <ChevronDown size={18} color={T.gris} style={{ transform: ouvert ? "rotate(180deg)" : "none", transition: "transform 0.2s", flexShrink: 0 }} />
+                    <ChevronDown size={18} color={T.gris} style={{ transform: ouvert ? "rotate(180deg)" : "none", transition: "transform 0.3s cubic-bezier(0.22,1,0.36,1)", flexShrink: 0 }} />
                   </button>
-                  {ouvert && <div className="px-5 pb-4 text-sm" style={{ color: T.gris }}>{f.r}</div>}
+                  <div className="grid transition-all duration-300 ease-out" style={{ gridTemplateRows: ouvert ? "1fr" : "0fr" }}>
+                    <div className="overflow-hidden">
+                      <div className="px-5 pb-4 text-sm" style={{ color: T.gris }}>{f.r}</div>
+                    </div>
+                  </div>
                 </div>
               );
             })}
@@ -234,9 +252,9 @@ export default function Accueil({ clients }) {
       </div>
 
       {/* CTA final */}
-      <div className="max-w-5xl mx-auto px-5 py-16 text-center">
+      <div ref={ctaRef} className={`reveal ${ctaVisible ? "reveal-visible" : ""} max-w-5xl mx-auto px-5 py-16 text-center`}>
         <h2 className="text-2xl font-bold mb-3" style={{ color: T.encre }}>Prêt à vendre en ligne dès aujourd'hui ?</h2>
-        <Link href="/creer" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full text-sm font-bold" style={{ background: T.bleu, color: T.blanc }}>
+        <Link href="/creer" className="bouton-hover inline-flex items-center gap-2 px-7 py-3.5 rounded-full text-sm font-bold" style={{ background: T.bleu, color: T.blanc }}>
           Créer mon site gratuitement <ArrowRight size={16} />
         </Link>
       </div>
@@ -245,7 +263,7 @@ export default function Accueil({ clients }) {
       <div style={{ borderTop: `1px solid ${T.bleuClairBord}`, background: "#F8FAFC" }}>
         <div className="max-w-5xl mx-auto px-5 py-10">
           <a href={`https://wa.me/${WHATSAPP_SUPPORT}`} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-3.5 rounded-2xl p-4 mb-8" style={{ background: T.blanc, border: `1.5px solid ${T.bleuClairBord}` }}>
+            className="carte-hover flex items-center gap-3.5 rounded-2xl p-4 mb-8" style={{ background: T.blanc, border: `1.5px solid ${T.bleuClairBord}` }}>
             <img src={WHATSAPP_AVATAR} alt="Assistance Sama Site" className="w-12 h-12 rounded-full object-cover shrink-0" style={{ border: `2px solid #25D366` }} />
             <div className="flex-1">
               <div className="font-semibold text-sm" style={{ color: T.encre }}>Contactez-nous sur WhatsApp</div>
@@ -261,13 +279,13 @@ export default function Accueil({ clients }) {
               <DrapeauSenegal size={12} />
             </div>
             <span className="text-xs" style={{ color: T.gris }}>© 2026 Sama Site — Dakar, Sénégal</span>
-            <Link href="/admin/login" className="text-xs flex items-center gap-1" style={{ color: "#CBD5E1" }}>
+            <Link href="/admin/login" className="text-xs flex items-center gap-1 transition-opacity duration-200 hover:opacity-70" style={{ color: "#CBD5E1" }}>
               <Lock size={11} /> Espace partenaire
             </Link>
           </div>
           <div className="flex items-center justify-center gap-4 mt-4">
-            <Link href="/confidentialite" className="text-xs" style={{ color: T.gris }}>Politique de confidentialité</Link>
-            <Link href="/cgu" className="text-xs" style={{ color: T.gris }}>CGU</Link>
+            <Link href="/confidentialite" className="text-xs transition-opacity duration-200 hover:opacity-70" style={{ color: T.gris }}>Politique de confidentialité</Link>
+            <Link href="/cgu" className="text-xs transition-opacity duration-200 hover:opacity-70" style={{ color: T.gris }}>CGU</Link>
           </div>
         </div>
       </div>

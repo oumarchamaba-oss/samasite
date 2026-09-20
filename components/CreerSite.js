@@ -376,7 +376,7 @@ export default function CreerSite() {
 
       {/* ÉTAPE 1 — catégorie */}
       {step === 1 && (
-        <div>
+        <div className="entree-douce">
           <h2 className="text-3xl font-bold mb-1" style={{ color: T.encre }}>Quelle est votre catégorie ?</h2>
           <p className="text-sm mb-6" style={{ color: T.gris }}>Le modèle de site s'adapte automatiquement à votre activité.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -388,7 +388,7 @@ export default function CreerSite() {
                   setBusiness((b) => ({ ...b, couleurs: null, metier: "", metierGroupe: "" }));
                   if (s.id === "artisanat") { setGroupeMetierOuvert(null); setStep(1.5); }
                 }}
-                  className="text-left rounded-2xl overflow-hidden transition-colors"
+                  className="text-left rounded-2xl overflow-hidden carte-hover transition-colors"
                   style={{ background: T.blanc, border: `2px solid ${selected ? T.bleu : T.bleuClairBord}` }}>
                   <div className="relative flex items-center justify-center p-3" style={{ background: "#F8FAFC", height: 120 }}>
                     <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: s.couleurBadge, opacity: selected ? 0.92 : 1 }}>
@@ -414,7 +414,7 @@ export default function CreerSite() {
 
           <div className="flex justify-end mt-8">
             <button disabled={!secteurId || (secteurId === "artisanat" && !business.metier)} onClick={() => setStep(2)}
-              className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold disabled:opacity-30" style={{ background: T.bleu, color: T.blanc }}>
+              className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold disabled:opacity-30 bouton-hover" style={{ background: T.bleu, color: T.blanc }}>
               Continuer <ArrowRight size={16} />
             </button>
           </div>
@@ -423,7 +423,7 @@ export default function CreerSite() {
 
       {/* ÉTAPE 1.5 — page dédiée : choix du métier (uniquement pour Artisanat & Réparation) */}
       {step === 1.5 && (
-        <div>
+        <div className="entree-douce">
           <button onClick={() => (groupeMetierOuvert ? setGroupeMetierOuvert(null) : setStep(1))}
             className="flex items-center gap-2 text-sm font-semibold mb-6" style={{ color: T.bleu }}>
             <ArrowLeft size={16} /> {groupeMetierOuvert ? "Tous les domaines" : "Retour aux catégories"}
@@ -439,7 +439,7 @@ export default function CreerSite() {
                   const actif = business.metierGroupe === groupe.nom;
                   return (
                     <button key={groupe.nom} onClick={() => setGroupeMetierOuvert(groupe.nom)}
-                      className="flex flex-col items-center gap-2.5 rounded-2xl p-5 text-center"
+                      className="flex flex-col items-center gap-2.5 rounded-2xl p-5 text-center carte-hover"
                       style={{ background: T.blanc, border: `2px solid ${actif ? T.bleu : T.bleuClairBord}` }}>
                       <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: T.bleuClair }}>
                         <GroupeIcon size={26} color={T.bleu} />
@@ -461,7 +461,7 @@ export default function CreerSite() {
                   const choisi = business.metier === m.nom;
                   return (
                     <button key={m.nom} onClick={() => setBusiness((b) => ({ ...b, metier: m.nom, metierGroupe: groupeMetierOuvert }))}
-                      className="flex items-center gap-3 rounded-xl p-4 text-left"
+                      className="flex items-center gap-3 rounded-xl p-4 text-left carte-hover"
                       style={{ background: choisi ? T.bleu : T.blanc, border: `2px solid ${choisi ? T.bleu : T.bleuClairBord}` }}>
                       <MIcon size={18} color={choisi ? "#fff" : T.bleu} className="shrink-0" />
                       <span className="text-sm font-semibold flex-1" style={{ color: choisi ? "#fff" : T.encre }}>{m.nom}</span>
@@ -475,7 +475,7 @@ export default function CreerSite() {
 
           <div className="flex justify-end mt-8">
             <button disabled={!business.metier} onClick={() => setStep(2)}
-              className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold disabled:opacity-30" style={{ background: T.bleu, color: T.blanc }}>
+              className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold disabled:opacity-30 bouton-hover" style={{ background: T.bleu, color: T.blanc }}>
               Continuer <ArrowRight size={16} />
             </button>
           </div>
@@ -484,7 +484,7 @@ export default function CreerSite() {
 
       {/* ÉTAPE 2 — couleurs */}
       {step === 2 && secteur && (
-        <div>
+        <div className="entree-douce">
           <h2 className="text-3xl font-bold mb-1" style={{ color: T.encre }}>Choisissez vos couleurs</h2>
           <p className="text-sm mb-6" style={{ color: T.gris }}>Des couleurs pensées pour {secteur.label.toLowerCase()} — chacune se décline en 2 variantes.</p>
 
@@ -566,15 +566,15 @@ export default function CreerSite() {
           )}
 
           <div className="flex justify-between mt-2">
-            <button onClick={() => setStep(1)} className="flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold" style={{ color: T.bleu }}><ArrowLeft size={16} /> Retour</button>
-            <button disabled={!business.couleurs} onClick={() => setStep(3)} className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold disabled:opacity-30" style={{ background: T.bleu, color: T.blanc }}>Continuer <ArrowRight size={16} /></button>
+            <button onClick={() => setStep(1)} className="flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold transition-opacity duration-200 hover:opacity-60" style={{ color: T.bleu }}><ArrowLeft size={16} /> Retour</button>
+            <button disabled={!business.couleurs} onClick={() => setStep(3)} className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold disabled:opacity-30 bouton-hover" style={{ background: T.bleu, color: T.blanc }}>Continuer <ArrowRight size={16} /></button>
           </div>
         </div>
       )}
 
       {/* ÉTAPE 3 — contenu */}
       {step === 3 && secteur && (
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-2 gap-8 entree-douce">
           <div>
             <h2 className="text-3xl font-bold mb-1" style={{ color: T.encre }}>Parlez-nous de votre activité</h2>
             <p className="text-sm mb-6" style={{ color: T.gris }}>Ces informations apparaissent sur votre site.</p>
@@ -765,7 +765,7 @@ export default function CreerSite() {
       )}
 
       {step === 3 && (
-        <div className="mt-8">
+        <div className="mt-8 entree-douce">
           {essaiTente && !peutPublier && (
             <p className="text-xs font-medium mb-3" style={{ color: T.rouge }}>
               Renseignez au moins le nom du commerce et le numéro WhatsApp avant de publier.
@@ -781,9 +781,9 @@ export default function CreerSite() {
             </button>
           )}
           <div className="flex justify-between items-center">
-            <button onClick={() => setStep(2)} className="flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold" style={{ color: T.bleu }}><ArrowLeft size={16} /> Retour</button>
+            <button onClick={() => setStep(2)} className="flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold transition-opacity duration-200 hover:opacity-60" style={{ color: T.bleu }}><ArrowLeft size={16} /> Retour</button>
             <button disabled={publicationEnCours} onClick={publierEssai}
-              className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold disabled:opacity-50" style={{ background: T.bleu, color: T.blanc }}>
+              className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold disabled:opacity-50 bouton-hover" style={{ background: T.bleu, color: T.blanc }}>
               {publicationEnCours ? (
                 <><RefreshCw size={16} className="animate-spin" /> Publication…</>
               ) : (
@@ -796,7 +796,7 @@ export default function CreerSite() {
 
       {/* ÉTAPE 4 — essai */}
       {step === 4 && secteur && (
-        <div>
+        <div className="entree-douce">
           <div className="rounded-2xl p-5 mb-4 flex items-center gap-4" style={{ background: T.jauneFond, border: `1.5px solid #F5E7A8` }}>
             <AnneauCompteARebours joursRestants={joursRestants} />
             <div>
@@ -823,15 +823,15 @@ export default function CreerSite() {
               <div className="flex items-center gap-2 text-xs px-3.5 py-2.5 rounded-lg" style={{ background: T.bleuClair, color: T.bleu }}>
                 <Globe size={14} /> www.{(business.nom || demoActif.nom).toLowerCase().replace(/\s+/g, "")}.samasite.com
               </div>
-              <button onClick={() => setApercuComplet(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold" style={{ background: T.encre, color: T.blanc }}>
+              <button onClick={() => setApercuComplet(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold bouton-hover" style={{ background: T.encre, color: T.blanc }}>
                 <Monitor size={15} /> Voir le rendu complet (ordinateur et smartphone)
               </button>
             </div>
           </div>
 
           <div className="flex justify-between mt-8">
-            <button onClick={() => setStep(3)} className="flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold" style={{ color: T.bleu }}><ArrowLeft size={16} /> Retour</button>
-            <button onClick={() => setStep(5)} className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold" style={{ background: T.bleu, color: T.blanc }}>Activer mon site <ArrowRight size={16} /></button>
+            <button onClick={() => setStep(3)} className="flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold transition-opacity duration-200 hover:opacity-60" style={{ color: T.bleu }}><ArrowLeft size={16} /> Retour</button>
+            <button onClick={() => setStep(5)} className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold bouton-hover" style={{ background: T.bleu, color: T.blanc }}>Activer mon site <ArrowRight size={16} /></button>
           </div>
 
           {apercuComplet && (
@@ -842,7 +842,7 @@ export default function CreerSite() {
 
       {/* ÉTAPE 5 — abonnement & paiement */}
       {step === 5 && !paye && (
-        <div>
+        <div className="entree-douce">
           <h2 className="text-3xl font-bold mb-1" style={{ color: T.encre }}>Passez votre site en ligne</h2>
           <p className="text-sm mb-6" style={{ color: T.gris }}>Une seule offre : votre site avec un nom de domaine inclus.</p>
 
@@ -851,7 +851,7 @@ export default function CreerSite() {
             {DOMAINES.map((d) => {
               const selected = extensionDomaine === d.id;
               return (
-                <button key={d.id} onClick={() => setExtensionDomaine(d.id)} className="text-left rounded-2xl p-4" style={{ background: T.blanc, border: `2px solid ${selected ? T.bleu : T.bleuClairBord}` }}>
+                <button key={d.id} onClick={() => setExtensionDomaine(d.id)} className="text-left rounded-2xl p-4 carte-hover" style={{ background: T.blanc, border: `2px solid ${selected ? T.bleu : T.bleuClairBord}` }}>
                   <div className="font-bold" style={{ color: T.encre }}>{d.label}</div>
                   <div className="text-xs mt-1" style={{ color: T.gris }}>{d.note}</div>
                 </button>
@@ -867,7 +867,7 @@ export default function CreerSite() {
                   const selected = duree === d.id;
                   const prix = PRIX[extensionDomaine][d.id];
                   return (
-                    <button key={d.id} onClick={() => setDuree(d.id)} className="text-left rounded-2xl p-4 relative" style={{ background: T.blanc, border: `2px solid ${selected ? T.bleu : T.bleuClairBord}` }}>
+                    <button key={d.id} onClick={() => setDuree(d.id)} className="text-left rounded-2xl p-4 relative carte-hover" style={{ background: T.blanc, border: `2px solid ${selected ? T.bleu : T.bleuClairBord}` }}>
                       {d.note && <div className="absolute -top-3 left-4"><Badge tone="jaune"><Sparkles size={11} /> Meilleur prix</Badge></div>}
                       <div className="font-bold" style={{ color: T.encre }}>{d.label}</div>
                       <div className="text-lg font-bold mt-1" style={{ color: T.bleu }}>{prix.toLocaleString("fr-FR")} F</div>
@@ -944,7 +944,7 @@ export default function CreerSite() {
                   const Icon = p.icon;
                   const selected = methodePaiement === id;
                   return (
-                    <button key={id} onClick={() => setMethodePaiement(id)} className="flex flex-col items-center gap-1.5 rounded-xl py-3.5 px-1"
+                    <button key={id} onClick={() => setMethodePaiement(id)} className="flex flex-col items-center gap-1.5 rounded-xl py-3.5 px-1 carte-hover"
                       style={{ background: selected ? p.bg : T.blanc, border: `2px solid ${selected ? p.color : T.bleuClairBord}` }}>
                       <Icon size={20} color={p.color} strokeWidth={2} />
                       <span className="text-xs font-semibold text-center leading-tight" style={{ color: T.encre }}>{p.label}</span>
@@ -972,7 +972,7 @@ export default function CreerSite() {
             </div>
             <button disabled={!duree || !methodePaiement || !contactNom || !business.email || traitement || traitementAPI}
               onClick={confirmerCommande}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-bold disabled:opacity-30" style={{ background: T.bleu, color: T.blanc }}>
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-bold disabled:opacity-30 bouton-hover" style={{ background: T.bleu, color: T.blanc }}>
               {traitement ? (
                 <><RefreshCw size={15} className="animate-spin" /> Enregistrement…</>
               ) : (
@@ -982,13 +982,13 @@ export default function CreerSite() {
           </div>
 
           <div className="flex justify-start items-center mt-4">
-            <button onClick={() => setStep(4)} disabled={traitement || traitementAPI} className="flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold disabled:opacity-30" style={{ color: T.bleu }}><ArrowLeft size={16} /> Retour</button>
+            <button onClick={() => setStep(4)} disabled={traitement || traitementAPI} className="flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold disabled:opacity-30 transition-opacity duration-200 hover:opacity-60" style={{ color: T.bleu }}><ArrowLeft size={16} /> Retour</button>
           </div>
         </div>
       )}
 
       {step === 5 && paye && payeAutomatiquement && (
-        <div className="max-w-md mx-auto text-center py-10">
+        <div className="max-w-md mx-auto text-center py-10 entree-douce">
           <img src={IMG_CONFIRMED} alt="Paiement confirmé" className="mx-auto mb-4 max-w-xs w-full" />
           <h2 className="text-2xl font-bold mb-2" style={{ color: T.encre }}>Paiement confirmé</h2>
           <p className="text-sm mb-6" style={{ color: T.gris }}>
@@ -998,14 +998,14 @@ export default function CreerSite() {
             <Mail size={16} className="mt-0.5 shrink-0" />
             Le domaine <strong>{domaineDemande || `${(business.nom || "").toLowerCase().replace(/\s+/g, "")}.${extensionDomaine}`}</strong> vous est livré par e-mail à <strong>{business.email}</strong> sous 48h.
           </div>
-          <button onClick={() => router.push("/espace")} className="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-full text-sm font-bold" style={{ background: T.bleu, color: T.blanc }}>
+          <button onClick={() => router.push("/espace")} className="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-full text-sm font-bold bouton-hover" style={{ background: T.bleu, color: T.blanc }}>
             Aller à mon espace <ArrowRight size={16} />
           </button>
         </div>
       )}
 
       {step === 5 && paye && !payeAutomatiquement && (
-        <div className="max-w-md mx-auto text-center py-10">
+        <div className="max-w-md mx-auto text-center py-10 entree-douce">
           <img src={IMG_CONFIRMED} alt="Commande enregistrée" className="mx-auto mb-4 max-w-xs w-full" />
           <h2 className="text-2xl font-bold mb-2" style={{ color: T.encre }}>Commande enregistrée</h2>
           <p className="text-sm mb-6" style={{ color: T.gris }}>
@@ -1017,10 +1017,10 @@ export default function CreerSite() {
           </div>
           <a href={`https://wa.me/${WHATSAPP_SUPPORT}?text=${encodeURIComponent(`Bonjour, je viens de commander mon site "${business.nom}" et je vous envoie la preuve de paiement.`)}`}
             target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-full text-sm font-bold mb-3" style={{ background: "#25D366", color: "#fff" }}>
+            className="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-full text-sm font-bold mb-3 bouton-hover" style={{ background: "#25D366", color: "#fff" }}>
             Envoyer ma preuve de paiement sur WhatsApp
           </a>
-          <button onClick={() => router.push("/espace")} className="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-full text-sm font-bold" style={{ background: T.bleuClair, color: T.bleu }}>
+          <button onClick={() => router.push("/espace")} className="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-full text-sm font-bold bouton-hover" style={{ background: T.bleuClair, color: T.bleu }}>
             Aller à mon espace <ArrowRight size={16} />
           </button>
         </div>

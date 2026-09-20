@@ -51,24 +51,24 @@ export default function ApercuSite({ secteur, business, paye }) {
               {business.logo ? <img src={business.logo} alt="" className="w-7 h-7 rounded-lg object-contain" style={{ background: p.fond }} /> : <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: p.fond }}><Icon size={13} color={p.primaire} /></div>}
               <span className="text-xs font-bold truncate" style={{ color: T.encre }}>{nom}</span>
             </div>
-            <div className="flex items-center gap-2"><a href={generalWa} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "#25D366" }}><MessageCircle size={14} color="#fff" /></a><Menu size={18} color={T.encre} /></div>
+            <div className="flex items-center gap-2"><a href={generalWa} target="_blank" rel="noopener noreferrer" className="bouton-hover w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "#25D366" }}><MessageCircle size={14} color="#fff" /></a><Menu size={18} color={T.encre} /></div>
           </header>
 
           {/* HERO */}
-          <section id="accueil" className="relative overflow-hidden" style={{ minHeight: 310 }}>
+          <section id="accueil" className="entree-douce relative overflow-hidden" style={{ minHeight: 310 }}>
             {business.banniere ? <img src={business.banniere} alt={nom} className="absolute inset-0 w-full h-full object-cover" /> : <div className="absolute inset-0" style={{ background: `linear-gradient(140deg, ${p.fond}, ${p.primaire}22)` }}><div className="absolute right-6 bottom-6"><Icon size={70} color={p.primaire} strokeWidth={1.2} /></div></div>}
             <div className="absolute inset-0" style={{ background: business.banniere ? "linear-gradient(90deg, rgba(255,255,255,.96) 0%, rgba(255,255,255,.78) 58%, rgba(255,255,255,.05) 100%)" : "none" }} />
             <div className="relative px-5 py-10 max-w-[270px]">
               <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: p.primaire }}>Bienvenue chez {nom}</p>
               <h1 className="text-2xl font-extrabold leading-tight mt-2" style={{ color: T.encre }}>{words.slice(0, split).join(" ")}{split ? " " : ""}<span style={{ color: p.primaire }}>{words.slice(split).join(" ")}</span></h1>
               <p className="text-xs leading-relaxed mt-3" style={{ color: T.gris }}>{business.metier ? `${business.metier} — ` : ""}{estService ? "Des services pensés pour répondre à vos besoins." : "Des produits sélectionnés avec soin pour vous."}</p>
-              <a href={generalWa} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-4 rounded-full px-4 py-2.5 text-[10px] font-bold text-white" style={{ background: heroFonce }}><MessageCircle size={12} /> {actionLabel} sur WhatsApp</a>
+              <a href={generalWa} target="_blank" rel="noopener noreferrer" className="bouton-hover inline-flex items-center gap-1.5 mt-4 rounded-full px-4 py-2.5 text-[10px] font-bold text-white" style={{ background: heroFonce }}><MessageCircle size={12} /> {actionLabel} sur WhatsApp</a>
             </div>
             {!paye && <div className="absolute bottom-3 right-3 rounded-full px-2.5 py-1 text-[8px] font-semibold text-white" style={{ background: "rgba(15,23,42,.55)" }}>Créé avec Sama Site</div>}
           </section>
 
           {/* PRODUITS / SERVICES */}
-          <section id="produits" className="px-4 py-7">
+          <section id="produits" className="entree-douce px-4 py-7" style={{ animationDelay: "80ms" }}>
             <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: p.primaire }}>Notre sélection</p>
             <h2 className="text-lg font-extrabold mt-1" style={{ color: T.encre }}>{catalogueLabel}</h2>
             {modesDispo.length > 1 && (
@@ -77,7 +77,7 @@ export default function ApercuSite({ secteur, business, paye }) {
                   const m = MODES_LIVRAISON[modeId]; const MIcon = m.icon;
                   const actif = modeCommande === modeId;
                   return (
-                    <button key={modeId} onClick={() => setModeCommande(modeId)} className="shrink-0 flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[9px] font-semibold"
+                    <button key={modeId} onClick={() => setModeCommande(modeId)} className="shrink-0 flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[9px] font-semibold transition-colors duration-200"
                       style={{ background: actif ? p.fond : T.blanc, color: actif ? p.primaire : T.gris, border: `1px solid ${actif ? p.primaire : T.bleuClairBord}` }}>
                       <MIcon size={10} /> {m.label}
                     </button>
@@ -85,11 +85,11 @@ export default function ApercuSite({ secteur, business, paye }) {
                 })}
               </div>
             )}
-            {categories.length > 1 && <div className="flex gap-5 overflow-x-auto mt-4 pb-2 border-b" style={{ borderColor: T.bleuClairBord, scrollbarWidth: "none" }}>{categories.map(cat => <button key={cat} onClick={() => setCategorieActive(cat)} className="shrink-0 text-[10px] font-medium pb-2 -mb-2 border-b-2" style={{ color: categorieActive === cat ? p.primaire : T.gris, borderColor: categorieActive === cat ? p.primaire : "transparent" }}>{cat}</button>)}</div>}
+            {categories.length > 1 && <div className="flex gap-5 overflow-x-auto mt-4 pb-2 border-b" style={{ borderColor: T.bleuClairBord, scrollbarWidth: "none" }}>{categories.map(cat => <button key={cat} onClick={() => setCategorieActive(cat)} className="shrink-0 text-[10px] font-medium pb-2 -mb-2 border-b-2 transition-colors duration-200" style={{ color: categorieActive === cat ? p.primaire : T.gris, borderColor: categorieActive === cat ? p.primaire : "transparent" }}>{cat}</button>)}</div>}
             <div className="flex gap-3 overflow-x-auto mt-4 pb-2" style={{ scrollbarWidth: "none" }}>
-              {itemsAffiches.map((item, i) => <article key={`${item.texte}-${i}`} className="shrink-0 w-[155px] rounded-xl overflow-hidden" style={{ border: `1px solid ${T.bleuClairBord}`, background: "#fff" }}>
+              {itemsAffiches.map((item, i) => <article key={`${item.texte}-${i}`} className="entree-douce carte-hover shrink-0 w-[155px] rounded-xl overflow-hidden" style={{ border: `1px solid ${T.bleuClairBord}`, background: "#fff", animationDelay: `${140 + Math.min(i, 6) * 60}ms` }}>
                 {item.image ? <img src={item.image} alt={item.texte} className="w-full h-24 object-cover" /> : <div className="w-full h-24 flex items-center justify-center" style={{ background: p.fond }}><Icon size={27} color={p.primaire} strokeWidth={1.4} /></div>}
-                <div className="p-2.5"><h3 className="text-[10px] font-bold leading-snug" style={{ color: T.encre }}>{item.texte}</h3>{item.description && <p className="text-[9px] leading-snug mt-1 line-clamp-2" style={{ color: T.gris }}>{item.description}</p>}{item.prix && <p className="text-[10px] font-extrabold mt-1.5" style={{ color: p.primaire }}>{item.prix}</p>}<a href={wa(business.whatsapp, `Bonjour ${nom}, je souhaite ${actionLabel.toLowerCase()} : ${item.texte}${item.prix ? ` (${item.prix})` : ""}${suffixeMode}.`)} target="_blank" rel="noopener noreferrer" className="mt-2.5 flex items-center justify-center gap-1 rounded-full py-1.5 text-[9px] font-bold text-white" style={{ background: "#25D366" }}><MessageCircle size={10} /> {actionLabel}</a></div>
+                <div className="p-2.5"><h3 className="text-[10px] font-bold leading-snug" style={{ color: T.encre }}>{item.texte}</h3>{item.description && <p className="text-[9px] leading-snug mt-1 line-clamp-2" style={{ color: T.gris }}>{item.description}</p>}{item.prix && <p className="text-[10px] font-extrabold mt-1.5" style={{ color: p.primaire }}>{item.prix}</p>}<a href={wa(business.whatsapp, `Bonjour ${nom}, je souhaite ${actionLabel.toLowerCase()} : ${item.texte}${item.prix ? ` (${item.prix})` : ""}${suffixeMode}.`)} target="_blank" rel="noopener noreferrer" className="bouton-hover mt-2.5 flex items-center justify-center gap-1 rounded-full py-1.5 text-[9px] font-bold text-white" style={{ background: "#25D366" }}><MessageCircle size={10} /> {actionLabel}</a></div>
               </article>)}
             </div>
           </section>
@@ -97,8 +97,8 @@ export default function ApercuSite({ secteur, business, paye }) {
           {/* FOOTER */}
           <footer id="contact" className="px-4 py-7" style={{ background: footerFonce }}>
             <div className="flex items-center gap-2">{business.logo ? <img src={business.logo} alt="" className="w-7 h-7 rounded-lg object-contain bg-white/10" /> : <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/10"><Icon size={13} color="#fff" /></div>}<span className="text-sm font-bold text-white">{nom}</span></div>
-            <div className="flex gap-4 mt-4 text-[10px] text-white/70"><a href="#accueil">Accueil</a><a href="#produits">{catalogueLabel}</a><a href="#contact">Contact</a></div>
-            <div className="mt-4 space-y-2">{business.whatsapp && <a href={generalWa} target="_blank" rel="noopener noreferrer" className="flex gap-2 items-center text-[10px] text-white/80"><MessageCircle size={11} />{business.whatsapp}</a>}{business.email && <a href={`mailto:${business.email}`} className="flex gap-2 items-center text-[10px] text-white/80"><Mail size={11} />{business.email}</a>}{business.adresse && <div className="flex gap-2 items-start text-[10px] text-white/80"><MapPin size={11} className="mt-0.5" />{business.adresse}</div>}{business.lienGoogleMaps && <a href={business.lienGoogleMaps} target="_blank" rel="noopener noreferrer" className="inline-flex gap-1 items-center mt-1 text-[9px] text-white/65"><ExternalLink size={10} /> Google Maps</a>}</div>
+            <div className="flex gap-4 mt-4 text-[10px] text-white/70"><a href="#accueil" className="transition-opacity duration-200 hover:opacity-100 hover:text-white">Accueil</a><a href="#produits" className="transition-opacity duration-200 hover:opacity-100 hover:text-white">{catalogueLabel}</a><a href="#contact" className="transition-opacity duration-200 hover:opacity-100 hover:text-white">Contact</a></div>
+            <div className="mt-4 space-y-2">{business.whatsapp && <a href={generalWa} target="_blank" rel="noopener noreferrer" className="flex gap-2 items-center text-[10px] text-white/80 transition-opacity duration-200 hover:opacity-100 hover:text-white"><MessageCircle size={11} />{business.whatsapp}</a>}{business.email && <a href={`mailto:${business.email}`} className="flex gap-2 items-center text-[10px] text-white/80 transition-opacity duration-200 hover:opacity-100 hover:text-white"><Mail size={11} />{business.email}</a>}{business.adresse && <div className="flex gap-2 items-start text-[10px] text-white/80"><MapPin size={11} className="mt-0.5" />{business.adresse}</div>}{business.lienGoogleMaps && <a href={business.lienGoogleMaps} target="_blank" rel="noopener noreferrer" className="inline-flex gap-1 items-center mt-1 text-[9px] text-white/65 transition-opacity duration-200 hover:opacity-100 hover:text-white"><ExternalLink size={10} /> Google Maps</a>}</div>
             {horairesFormates.length > 0 && (
               <div className="mt-4 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.12)" }}>
                 <p className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: "rgba(255,255,255,0.5)" }}><Clock size={10} /> Horaires</p>
@@ -109,7 +109,7 @@ export default function ApercuSite({ secteur, business, paye }) {
                 ))}
               </div>
             )}
-            {reseauxActifs.length > 0 && <div className="flex gap-2 mt-4">{reseauxActifs.map((r) => { const RIcon = r.icon; return <a key={r.id} href={business.reseaux[r.id]} target="_blank" rel="noopener noreferrer" aria-label={r.label || r.id} className="w-7 h-7 rounded-full flex items-center justify-center bg-white/10"><RIcon size={13} color="#fff" /></a>; })}</div>}
+            {reseauxActifs.length > 0 && <div className="flex gap-2 mt-4">{reseauxActifs.map((r) => { const RIcon = r.icon; return <a key={r.id} href={business.reseaux[r.id]} target="_blank" rel="noopener noreferrer" aria-label={r.label || r.id} className="w-7 h-7 rounded-full flex items-center justify-center bg-white/10 transition-transform duration-200 hover:scale-110 hover:bg-white/20"><RIcon size={13} color="#fff" /></a>; })}</div>}
             <p className="mt-6 pt-4 border-t border-white/10 text-[9px] text-white/40">© {new Date().getFullYear()} {nom}. Tous droits réservés.{!paye ? " · Créé avec Sama Site" : ""}</p>
           </footer>
         </div>
