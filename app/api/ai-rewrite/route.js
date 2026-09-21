@@ -11,7 +11,11 @@
 // cette limite, remplacer par Vercel KV / Upstash Redis (partagé entre
 // toutes les instances serverless).
 const appelsParIp = new Map();
-const LIMITE_APPELS = 10;
+// 10/heure était trop bas : un seul client qui améliore l'accroche, la
+// description et plusieurs produits dépasse vite ce seuil et l'assistant
+// semble "en panne" alors qu'il est simplement limité. Gemini gratuit
+// autorise 1500 requêtes/jour, il y a largement de la marge.
+const LIMITE_APPELS = 30;
 const FENETRE_MS = 60 * 60 * 1000; // 1 heure
 
 function estAutorise(ip) {

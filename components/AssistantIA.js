@@ -23,16 +23,24 @@ export default function AssistantIA({ texte, onAppliquer, entreprise, secteurLab
   const appelerIA = async (consigne) => {
     setChargement(true); setErreur(null); setDerniereConsigne(consigne);
     try {
-const response = await fetch("/api/ai-rewrite", {
+      const response = await fetch("/api/ai-rewrite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ entreprise, secteurLabel, champLabel, texte, consigne }),
       });
-      const data = await response.json();
-      if (!data.resultat) throw new Error(data.erreur || "vide");
+      // En cas d'erreur serveur (ex. timeout, redémarrage), la réponse peut ne
+      // pas être du JSON valide — on l'affiche quand même plutôt que d'échouer
+      // silencieusement sur un message générique impossible à diagnostiquer.
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error(`Réponse inattendue du serveur (statut ${response.status}).`);
+      }
+      if (!data.resultat) throw new Error(data.erreur || `Réponse vide (statut ${response.status}).`);
       setPropose(data.resultat);
     } catch (e) {
-      setErreur("La génération a échoué. Réessayez.");
+      setErreur(e.message || "La génération a échoué. Réessayez.");
     } finally {
       setChargement(false);
     }

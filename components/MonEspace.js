@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Sparkles, Clock, CheckCircle2, ArrowRight, Globe, Edit3, LogOut, Lock } from "lucide-react";
+import { Sparkles, Clock, CheckCircle2, ArrowRight, Globe, Edit3, LogOut, Lock, Copy, Check } from "lucide-react";
 import { T, SECTEURS, WHATSAPP_SUPPORT, WHATSAPP_AVATAR, Badge } from "../lib/data";
 import { supabase } from "../lib/supabaseClient";
 
@@ -32,6 +32,13 @@ function CarteSite({ site }) {
   // ouvre vraiment le site est celui-ci — voir app/site/[token]/page.js.
   const lien = paye && site.domaine ? site.domaine : `samasite.online/site/${site.edit_token}`;
   const statut = statutReel(site);
+  const [lienCopie, setLienCopie] = useState(false);
+  const copierLien = () => {
+    const url = paye && site.domaine ? `https://${site.domaine}` : `https://samasite.online/site/${site.edit_token}`;
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(url).then(() => { setLienCopie(true); setTimeout(() => setLienCopie(false), 2000); }).catch(() => {});
+    }
+  };
 
   return (
     <div className="rounded-2xl p-5 mb-4" style={{ background: T.blanc, border: `1.5px solid ${T.bleuClairBord}` }}>
@@ -47,10 +54,17 @@ function CarteSite({ site }) {
         {statut === "essai_expire" && <Badge tone="rouge"><Clock size={11} /> Essai terminé — non payé</Badge>}
         {statut === "expire" && <Badge tone="rouge"><Clock size={11} /> Expiré</Badge>}
       </div>
-      <a href={paye && site.domaine ? `https://${site.domaine}` : `/site/${site.edit_token}`} target="_blank" rel="noopener noreferrer"
-        className="flex items-center gap-2 text-sm px-3.5 py-2.5 rounded-lg mb-4" style={{ background: T.bleuClair, color: T.bleu, textDecoration: "underline" }}>
-        <Globe size={14} /> {lien}
-      </a>
+      <div className="flex items-center gap-2 mb-4">
+        <a href={paye && site.domaine ? `https://${site.domaine}` : `/site/${site.edit_token}`} target="_blank" rel="noopener noreferrer"
+          className="flex-1 flex items-center gap-2 text-sm px-3.5 py-2.5 rounded-lg min-w-0" style={{ background: T.bleuClair, color: T.bleu, textDecoration: "underline" }}>
+          <Globe size={14} className="shrink-0" /> <span className="truncate">{lien}</span>
+        </a>
+        <button type="button" onClick={copierLien} title="Copier le lien"
+          className="flex items-center justify-center w-10 h-10 rounded-lg shrink-0 transition-colors"
+          style={{ background: lienCopie ? T.vert : T.bleuClair, color: lienCopie ? T.blanc : T.bleu, border: `1.5px solid ${T.bleuClairBord}` }}>
+          {lienCopie ? <Check size={16} /> : <Copy size={16} />}
+        </button>
+      </div>
       <div className="flex items-center gap-2 flex-wrap">
         <Link href={`/mon-espace/${site.id}`} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-semibold" style={{ background: T.bleuClair, color: T.bleu }}>
           <Edit3 size={13} /> Gérer ce site

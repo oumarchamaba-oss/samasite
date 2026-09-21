@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Sparkles, MessageCircle, LayoutGrid, ArrowRight, ArrowLeft, Globe, Plus, X, Timer, Wallet,
-  Link2, Check, RefreshCw, AlertCircle, ClipboardList, MapPin, Mail, Image, Upload, Tag, Monitor,
+  Link2, Check, Copy, RefreshCw, AlertCircle, ClipboardList, MapPin, Mail, Image, Upload, Tag, Monitor,
   Palette as PaletteIcon, CheckCircle2,
 } from "lucide-react";
 import {
@@ -42,6 +42,15 @@ export default function CreerSite() {
   const [traitementAPI, setTraitementAPI] = useState(false);
   const [siteId, setSiteId] = useState(null);
   const [siteEditToken, setSiteEditToken] = useState(null);
+  const [lienCopie, setLienCopie] = useState(false);
+  const copierLienSite = () => {
+    if (!siteEditToken) return;
+    const lien = `https://samasite.online/site/${siteEditToken}`;
+    const declencherRetour = () => { setLienCopie(true); setTimeout(() => setLienCopie(false), 2000); };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(lien).then(declencherRetour).catch(() => {});
+    }
+  };
   const [session, setSession] = useState(undefined); // undefined = pas encore vérifié
   const [publicationEnCours, setPublicationEnCours] = useState(false);
   const [erreurPublication, setErreurPublication] = useState("");
@@ -823,10 +832,17 @@ export default function CreerSite() {
               <h3 className="text-2xl font-bold" style={{ color: T.encre }}>Ça vous plaît ?</h3>
               <p className="text-sm" style={{ color: T.gris }}>Partagez le lien à vos clients pendant l'essai. Pour garder le site et passer à votre propre nom de domaine, activez votre abonnement.</p>
               {siteEditToken && (
-                <a href={`/site/${siteEditToken}`} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-xs px-3.5 py-2.5 rounded-lg" style={{ background: T.bleuClair, color: T.bleu, textDecoration: "underline" }}>
-                  <Globe size={14} /> samasite.online/site/{siteEditToken}
-                </a>
+                <div className="flex items-center gap-2">
+                  <a href={`/site/${siteEditToken}`} target="_blank" rel="noopener noreferrer"
+                    className="flex-1 flex items-center gap-2 text-xs px-3.5 py-2.5 rounded-lg min-w-0" style={{ background: T.bleuClair, color: T.bleu, textDecoration: "underline" }}>
+                    <Globe size={14} className="shrink-0" /> <span className="truncate">samasite.online/site/{siteEditToken}</span>
+                  </a>
+                  <button type="button" onClick={copierLienSite} title="Copier le lien"
+                    className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-semibold shrink-0 transition-colors"
+                    style={{ background: lienCopie ? T.vert : T.bleuClair, color: lienCopie ? T.blanc : T.bleu, border: `1.5px solid ${T.bleuClairBord}` }}>
+                    {lienCopie ? <Check size={14} /> : <Copy size={14} />} {lienCopie ? "Copié" : "Copier"}
+                  </button>
+                </div>
               )}
               {siteEditToken && (
                 <a href={`/site/${siteEditToken}`} target="_blank" rel="noopener noreferrer"
