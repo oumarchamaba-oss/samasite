@@ -209,7 +209,7 @@ export default function SiteDesktop({ secteur, business, paye }) {
           </div>
           <div className="mt-10 pt-5 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs text-white/40">© {new Date().getFullYear()} {nom}. Tous droits réservés.</p>
-            {!paye && <a href="https://samasite.com" target="_blank" rel="noopener noreferrer" className="text-xs text-white/45 transition-opacity duration-200 hover:opacity-80">Créé avec <strong className="text-white/70">Sama Site</strong></a>}
+            {!paye && <a href="https://samasite.online" target="_blank" rel="noopener noreferrer" className="text-xs text-white/45 transition-opacity duration-200 hover:opacity-80">Créé avec <strong className="text-white/70">Sama Site</strong></a>}
           </div>
         </div>
       </footer>

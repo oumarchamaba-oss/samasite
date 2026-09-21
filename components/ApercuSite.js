@@ -41,7 +41,7 @@ export default function ApercuSite({ secteur, business, paye }) {
     <div className="mx-auto" style={{ width: 320 }}>
       <div className="flex items-center gap-2 px-3 py-2 rounded-t-2xl" style={{ background: "#E2E8F0" }}>
         <div className="flex gap-1"><i className="w-2 h-2 rounded-full bg-slate-400" /><i className="w-2 h-2 rounded-full bg-slate-400" /><i className="w-2 h-2 rounded-full bg-slate-400" /></div>
-        <div className="flex-1 rounded-full px-3 py-1 bg-white text-[9px] text-slate-500 truncate">www.{nom.toLowerCase().replace(/\s+/g, "") || "monsite"}.samasite.com</div>
+        <div className="flex-1 rounded-full px-3 py-1 bg-white text-[9px] text-slate-500 truncate">www.{nom.toLowerCase().replace(/\s+/g, "") || "monsite"}.samasite.online</div>
       </div>
       <div className="overflow-hidden shadow-xl" style={{ height: 610, borderRadius: "0 0 1.25rem 1.25rem", background: T.blanc }}>
         <div className="h-full overflow-y-auto" style={{ scrollbarWidth: "none" }}>

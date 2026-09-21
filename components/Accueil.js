@@ -198,7 +198,7 @@ export default function Accueil({ clients }) {
             </div>
             <div className="text-xs mb-4" style={{ color: T.gris }}>Sans carte bancaire, sans engagement</div>
             <ul className="space-y-2">
-              {["Sous-domaine samasite.com", "Site publié et modifiable", "Contact via WhatsApp"].map((item, i) => (
+              {["Sous-domaine samasite.online", "Site publié et modifiable", "Contact via WhatsApp"].map((item, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm" style={{ color: T.encre }}>
                   <CheckCircle2 size={15} color={T.vert} className="mt-0.5 shrink-0" /> {item}
                 </li>
