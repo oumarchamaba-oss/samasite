@@ -488,6 +488,39 @@ end;
 $$;
 grant execute on function sama_site.rattacher_site to authenticated;
 
+-- Prolonge la période d'essai d'un site (ajoute p_jours à essai_expire_le) —
+-- réservé à l'administrateur, depuis le tableau de bord.
+create or replace function sama_site.prolonger_essai_admin(p_site_id uuid, p_jours integer)
+returns setof sama_site.sites
+language plpgsql
+security definer
+set search_path = sama_site, public, extensions
+as $$
+begin
+  if not sama_site.is_admin() then
+    raise exception 'Réservé à l''administrateur.';
+  end if;
+
+  if p_jours is null or p_jours <= 0 then
+    raise exception 'Le nombre de jours doit être positif.';
+  end if;
+
+  update sama_site.sites set
+    essai_expire_le = greatest(coalesce(essai_expire_le, now()), now()) + (p_jours || ' days')::interval,
+    updated_at = now()
+  where id = p_site_id
+    and supprime_le is null
+    and statut in ('essai', 'a_livrer');
+
+  if not found then
+    raise exception 'Site introuvable, supprimé, ou son statut ne correspond plus à un essai (déjà payé ou déjà expiré définitivement).';
+  end if;
+
+  return query select * from sama_site.sites where id = p_site_id;
+end;
+$$;
+grant execute on function sama_site.prolonger_essai_admin to authenticated;
+
 -- Liste publique restreinte (nom, secteur, statut uniquement) pour la section
 -- "Ils ont créé leur site avec Sama Site" de la page d'accueil.
 create or replace function sama_site.sites_publics()

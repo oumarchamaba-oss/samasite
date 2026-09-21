@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import {
   MessageCircle, Clock, CheckCircle2, Send, Timer, Package, Wallet, Users, TrendingUp,
   LogOut, AlertCircle, Mail, Download, CheckSquare, FileText, Receipt, CalendarClock, RefreshCw, Banknote, Phone, X,
+  Trash2, PlusCircle,
 } from "lucide-react";
 import { T, SECTEURS, PAIEMENTS, DUREES, PRIX, AnneauCompteARebours, Badge } from "../lib/data";
 import { IMG_EXPIRED } from "../lib/images";
@@ -28,6 +29,10 @@ export default function DashboardAdmin() {
   const [renouvelDuree, setRenouvelDuree] = useState(null);
   const [renouvelPaiement, setRenouvelPaiement] = useState(null);
   const [renouvelTraitement, setRenouvelTraitement] = useState(false);
+  const [siteASupprimer, setSiteASupprimer] = useState(null);
+  const [suppressionEnCours, setSuppressionEnCours] = useState(false);
+  const [erreurSuppression, setErreurSuppression] = useState("");
+  const [prolongationEnCours, setProlongationEnCours] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -232,6 +237,32 @@ export default function DashboardAdmin() {
   const relancer = async (site, canal) => {
     setRelances((r) => ({ ...r, [site.id]: { site_id: site.id, canal, created_at: new Date().toISOString() } }));
     await supabase.from("relances").insert([{ site_id: site.id, canal, note: `Relance ${canal} depuis le tableau de bord` }]);
+  };
+
+  // Supprime définitivement un site (suppression douce en base — le site
+  // n'apparaît plus nulle part dans le tableau de bord ni chez le client,
+  // mais l'historique des paiements reste conservé pour la comptabilité —
+  // voir migration_selfhosted_20260921_suppression_site.sql). La fonction
+  // RPC accepte déjà les appels admin (elle vérifie user_id = auth.uid() OU
+  // is_admin()), aucune nouvelle fonction SQL n'était nécessaire ici.
+  const supprimerSite = async (client) => {
+    setSuppressionEnCours(true);
+    setErreurSuppression("");
+    const { error } = await supabase.rpc("supprimer_site_proprietaire", { p_site_id: client.id });
+    setSuppressionEnCours(false);
+    if (error) { setErreurSuppression("Impossible de supprimer ce site. Réessayez."); return; }
+    setSiteASupprimer(null);
+    chargerClients();
+  };
+
+  // Prolonge la période d'essai d'un client de p_jours (fonctionne même si
+  // l'essai est déjà expiré, puisque essai_expire_le ne se remet jamais à
+  // zéro tout seul) — voir migration_selfhosted_20260921_prolonger_essai_admin.sql.
+  const prolongerEssai = async (client, jours) => {
+    setProlongationEnCours(client.id);
+    const { error } = await supabase.rpc("prolonger_essai_admin", { p_site_id: client.id, p_jours: jours });
+    setProlongationEnCours(null);
+    if (!error) chargerClients();
   };
 
   // Clients actifs à contacter en priorité pour le renouvellement (échéance dans les 30 jours),
@@ -475,6 +506,20 @@ export default function DashboardAdmin() {
                 <button onClick={() => livrer(c)} className="flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-bold shrink-0" style={{ background: T.jaune, color: T.bleuFonce }}>
                   <CheckSquare size={13} /> Marquer comme payé
                 </button>
+                {siteASupprimer === c.id ? (
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-semibold" style={{ color: "#F87171" }}>Supprimer ?</span>
+                      <button onClick={() => supprimerSite(c)} disabled={suppressionEnCours} className="px-2.5 py-2 rounded-full text-xs font-bold disabled:opacity-40" style={{ background: "#DC2626", color: "#fff" }}>{suppressionEnCours ? "…" : "Oui"}</button>
+                      <button onClick={() => { setSiteASupprimer(null); setErreurSuppression(""); }} className="px-2.5 py-2 rounded-full text-xs font-semibold" style={{ background: "rgba(255,255,255,0.1)", color: T.blanc }}>Non</button>
+                    </div>
+                    {erreurSuppression && <span className="text-xs" style={{ color: "#F87171" }}>{erreurSuppression}</span>}
+                  </div>
+                ) : (
+                  <button onClick={() => setSiteASupprimer(c.id)} aria-label="Supprimer ce site" title="Supprimer ce site" className="flex items-center gap-1.5 px-3 py-2.5 rounded-full text-xs font-semibold shrink-0" style={{ background: "rgba(220,38,38,0.15)", color: "#F87171" }}>
+                    <Trash2 size={13} />
+                  </button>
+                )}
               </div>
             );
           })}
@@ -494,7 +539,7 @@ export default function DashboardAdmin() {
                 <Badge tone={c.joursRestants <= 1 ? "rouge" : "jaune"}>
                   <Clock size={11} /> {c.joursRestants} jour{c.joursRestants > 1 ? "s" : ""} restant{c.joursRestants > 1 ? "s" : ""}
                 </Badge>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 flex-wrap">
                   {lienWhatsapp && (
                     <a href={lienWhatsapp} target="_blank" rel="noopener noreferrer" onClick={() => relancer(c, "whatsapp")}
                       className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-full text-xs font-bold" style={{ background: "#25D366", color: "#fff" }}>
@@ -506,6 +551,27 @@ export default function DashboardAdmin() {
                       className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-full text-xs font-bold" style={{ background: "rgba(255,255,255,0.1)", color: T.blanc }}>
                       <Mail size={13} /> E-mail
                     </a>
+                  )}
+                  {[1, 3, 7].map((jours) => (
+                    <button key={jours} onClick={() => prolongerEssai(c, jours)} disabled={prolongationEnCours === c.id}
+                      aria-label={`Prolonger l'essai de ${jours} jour${jours > 1 ? "s" : ""}`} title={`Prolonger l'essai de ${jours} jour${jours > 1 ? "s" : ""}`}
+                      className="flex items-center gap-1 px-2.5 py-2.5 rounded-full text-xs font-semibold disabled:opacity-40" style={{ background: "rgba(255,255,255,0.1)", color: T.blanc }}>
+                      <PlusCircle size={12} /> {jours}j
+                    </button>
+                  ))}
+                  {siteASupprimer === c.id ? (
+                    <div className="flex flex-col items-end gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold" style={{ color: "#F87171" }}>Supprimer ?</span>
+                        <button onClick={() => supprimerSite(c)} disabled={suppressionEnCours} className="px-2.5 py-2 rounded-full text-xs font-bold disabled:opacity-40" style={{ background: "#DC2626", color: "#fff" }}>{suppressionEnCours ? "…" : "Oui"}</button>
+                        <button onClick={() => { setSiteASupprimer(null); setErreurSuppression(""); }} className="px-2.5 py-2 rounded-full text-xs font-semibold" style={{ background: "rgba(255,255,255,0.1)", color: T.blanc }}>Non</button>
+                      </div>
+                      {erreurSuppression && <span className="text-xs" style={{ color: "#F87171" }}>{erreurSuppression}</span>}
+                    </div>
+                  ) : (
+                    <button onClick={() => setSiteASupprimer(c.id)} aria-label="Supprimer ce site" title="Supprimer ce site" className="flex items-center gap-1.5 px-3 py-2.5 rounded-full text-xs font-semibold" style={{ background: "rgba(220,38,38,0.15)", color: "#F87171" }}>
+                      <Trash2 size={13} />
+                    </button>
                   )}
                 </div>
               </div>
@@ -569,7 +635,19 @@ export default function DashboardAdmin() {
                         <Mail size={12} />
                       </a>
                     )}
+                    {siteASupprimer === c.id ? (
+                      <>
+                        <span className="text-xs font-semibold" style={{ color: "#F87171" }}>Supprimer ?</span>
+                        <button onClick={() => supprimerSite(c)} disabled={suppressionEnCours} className="px-2 py-1.5 rounded-full text-xs font-bold disabled:opacity-40" style={{ background: "#DC2626", color: "#fff" }}>{suppressionEnCours ? "…" : "Oui"}</button>
+                        <button onClick={() => { setSiteASupprimer(null); setErreurSuppression(""); }} className="px-2 py-1.5 rounded-full text-xs font-semibold" style={{ background: "rgba(255,255,255,0.1)", color: T.blanc }}>Non</button>
+                      </>
+                    ) : (
+                      <button onClick={() => setSiteASupprimer(c.id)} aria-label="Supprimer ce site" title="Supprimer ce site" className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold" style={{ background: "rgba(220,38,38,0.15)", color: "#F87171" }}>
+                        <Trash2 size={12} />
+                      </button>
+                    )}
                   </div>
+                  {siteASupprimer === c.id && erreurSuppression && <span className="text-xs" style={{ color: "#F87171" }}>{erreurSuppression}</span>}
                 </div>
               </div>
             );
@@ -699,7 +777,7 @@ export default function DashboardAdmin() {
                     <div className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.4)" }}>Ancien domaine : {c.domaine} · {c.montant?.toLocaleString("fr-FR")} F</div>
                   )}
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 flex-wrap">
                   {lienWhatsapp && (
                     <a href={lienWhatsapp} target="_blank" rel="noopener noreferrer" onClick={() => relancer(c, "whatsapp")}
                       className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-full text-xs font-bold" style={{ background: "#25D366", color: "#fff" }}>
@@ -711,6 +789,27 @@ export default function DashboardAdmin() {
                       className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-full text-xs font-bold" style={{ background: "rgba(255,255,255,0.1)", color: T.blanc }}>
                       <Mail size={13} /> E-mail
                     </a>
+                  )}
+                  {!estAbonnement && [1, 3, 7].map((jours) => (
+                    <button key={jours} onClick={() => prolongerEssai(c, jours)} disabled={prolongationEnCours === c.id}
+                      aria-label={`Prolonger l'essai de ${jours} jour${jours > 1 ? "s" : ""}`} title={`Prolonger l'essai de ${jours} jour${jours > 1 ? "s" : ""}`}
+                      className="flex items-center gap-1 px-2.5 py-2.5 rounded-full text-xs font-semibold disabled:opacity-40" style={{ background: "rgba(255,255,255,0.1)", color: T.blanc }}>
+                      <PlusCircle size={12} /> {jours}j
+                    </button>
+                  ))}
+                  {siteASupprimer === c.id ? (
+                    <div className="flex flex-col items-end gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold" style={{ color: "#F87171" }}>Supprimer ?</span>
+                        <button onClick={() => supprimerSite(c)} disabled={suppressionEnCours} className="px-2.5 py-2 rounded-full text-xs font-bold disabled:opacity-40" style={{ background: "#DC2626", color: "#fff" }}>{suppressionEnCours ? "…" : "Oui"}</button>
+                        <button onClick={() => { setSiteASupprimer(null); setErreurSuppression(""); }} className="px-2.5 py-2 rounded-full text-xs font-semibold" style={{ background: "rgba(255,255,255,0.1)", color: T.blanc }}>Non</button>
+                      </div>
+                      {erreurSuppression && <span className="text-xs" style={{ color: "#F87171" }}>{erreurSuppression}</span>}
+                    </div>
+                  ) : (
+                    <button onClick={() => setSiteASupprimer(c.id)} aria-label="Supprimer ce site" title="Supprimer ce site" className="flex items-center gap-1.5 px-3 py-2.5 rounded-full text-xs font-semibold" style={{ background: "rgba(220,38,38,0.15)", color: "#F87171" }}>
+                      <Trash2 size={13} />
+                    </button>
                   )}
                 </div>
               </div>
