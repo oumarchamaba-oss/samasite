@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, RefreshCw, CheckCircle2, Lock, ArrowRight, Clock, Upload, X, Wallet } from "lucide-react";
-import { T, SECTEURS, SECTEUR_COULEURS, RESEAUX_SOCIAUX, MODES_LIVRAISON, paletteIdPour, genererSchema, horairesParDefaut, PRIX_MODIFICATION } from "../lib/data";
+import { T, SECTEURS, SECTEUR_COULEURS, RESEAUX_SOCIAUX, MODES_LIVRAISON, paletteIdPour, genererSchema, horairesParDefaut, PRIX_MODIFICATION, trouverMetier } from "../lib/data";
 import { supabase } from "../lib/supabaseClient";
 import EditeurHoraires from "./EditeurHoraires";
 import PaiementSite from "./PaiementSite";
@@ -76,6 +76,10 @@ export default function EditerSite({ mode, token, site: siteInitial, onSaved }) 
 
   const secteur = SECTEURS.find((s) => s.id === site.secteur_id);
   const modifiable = estModifiable(site);
+  // Exemples de placeholders adaptés au secteur ET au métier précis (21/09/2026,
+  // parité avec CreerSite.js) — mêmes principes que dans le formulaire de création.
+  const demoActifEdition = (site.metier ? trouverMetier(site.metier)?.demo : null) || secteur?.demo;
+  const exempleProduitEdition = demoActifEdition?.produits?.[0];
   const couleursSecteur = secteur ? SECTEUR_COULEURS[paletteIdPour(secteur, { metierGroupe: site.metier_groupe })] : [];
   const modesDispo = secteur?.modesLivraison || [];
 
@@ -332,9 +336,9 @@ export default function EditerSite({ mode, token, site: siteInitial, onSaved }) 
 
         <label className="block text-xs font-semibold mb-2" style={{ color: T.gris }}>Produits / services</label>
         <div className="flex gap-2 mb-3">
-          <input value={nouveauTexte} onChange={(e) => setNouveauTexte(e.target.value)} placeholder="Nom du produit"
+          <input value={nouveauTexte} onChange={(e) => setNouveauTexte(e.target.value)} placeholder={exempleProduitEdition?.texte ? `ex. ${exempleProduitEdition.texte}` : "Nom du produit"}
             className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none" style={{ border: `1.5px solid ${T.bleuClairBord}` }} />
-          <input value={nouveauPrix} onChange={(e) => setNouveauPrix(e.target.value)} placeholder="Prix"
+          <input value={nouveauPrix} onChange={(e) => setNouveauPrix(e.target.value)} placeholder={exempleProduitEdition?.prix || "Prix"}
             className="w-24 rounded-xl px-3 py-2.5 text-sm outline-none" style={{ border: `1.5px solid ${T.bleuClairBord}` }} />
           <button type="button" onClick={ajouterProduit} className="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0" style={{ background: T.bleu }}><Plus size={18} /></button>
         </div>

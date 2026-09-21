@@ -164,6 +164,14 @@ export default function CreerSite() {
   const peutPublier = nomValide && whatsappValide;
   const demoMetierActif = business.metier ? trouverMetier(business.metier)?.demo : null;
   const demoActif = demoMetierActif || secteur?.demo;
+  // Exemples utilisés dans les placeholders du formulaire "produits/services"
+  // (21/09/2026) : demoActif tient déjà compte du métier précis choisi pour
+  // l'artisanat (pas seulement du secteur), donc ces exemples s'adaptent
+  // automatiquement au secteur ET au sous-secteur — voir demande du
+  // 21/09/2026. Avant ce correctif, ces trois placeholders étaient fixes
+  // ("Miel toutes fleurs 500ml", "Boissons"...) quel que soit le secteur.
+  const exempleProduit = demoActif?.produits?.[0];
+  const exemplesCategories = [...new Set((demoActif?.produits || []).map((p) => p.categorie).filter(Boolean))];
 
   const couleursSecteur = secteur ? SECTEUR_COULEURS[paletteIdPour(secteur, business)] : [];
   const couleurBaseChoisie = business.couleurs?.baseId
@@ -725,17 +733,17 @@ export default function CreerSite() {
             <label className="block text-xs font-semibold mb-1.5" style={{ color: T.gris }}>{secteur.libelleCatalogue}</label>
             <div className="grid grid-cols-2 gap-2 mb-2">
               <input value={nouveauProduit} onChange={(e) => setNouveauProduit(e.target.value)} onKeyDown={(e) => e.key === "Enter" && ajouterProduit()}
-                placeholder={estService ? "ex. Consultation initiale" : "ex. Miel toutes fleurs 500ml"}
+                placeholder={exempleProduit?.texte ? `ex. ${exempleProduit.texte}` : (estService ? "ex. Consultation initiale" : "ex. Nom du produit")}
                 className="rounded-xl px-4 py-3 text-sm outline-none" style={{ background: T.blanc, border: `1.5px solid ${T.bleuClairBord}` }} />
               <input value={nouveauPrix} onChange={(e) => setNouveauPrix(e.target.value)} onKeyDown={(e) => e.key === "Enter" && ajouterProduit()}
-                placeholder="Prix (ex. 2 500 F)"
+                placeholder={exempleProduit?.prix ? `Prix (ex. ${exempleProduit.prix})` : "Prix (ex. 2 500 F)"}
                 className="rounded-xl px-4 py-3 text-sm outline-none" style={{ background: T.blanc, border: `1.5px solid ${T.bleuClairBord}` }} />
             </div>
             <div className="flex gap-2 mb-2">
               <div className="flex items-center gap-2 rounded-xl px-4 py-2 flex-1" style={{ background: T.blanc, border: `1.5px solid ${T.bleuClairBord}` }}>
                 <Tag size={14} color={T.gris} />
                 <input value={nouvelleCategorie} onChange={(e) => setNouvelleCategorie(e.target.value)} onKeyDown={(e) => e.key === "Enter" && ajouterProduit()}
-                  placeholder="Catégorie (facultative, ex. Boissons)"
+                  placeholder={exemplesCategories.length ? `Catégorie (facultative, ex. ${exemplesCategories.slice(0, 2).join(", ")})` : "Catégorie (facultative)"}
                   className="text-sm outline-none flex-1 bg-transparent" />
               </div>
               <button onClick={ajouterProduit} className="w-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: T.bleu }}>
