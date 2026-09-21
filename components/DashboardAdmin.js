@@ -47,7 +47,14 @@ export default function DashboardAdmin() {
     setChargement(true);
     setErreurChargement("");
     const [resSites, resRelances, resModifs] = await Promise.all([
-      supabase.from("sites").select("*").order("created_at", { ascending: false }),
+      // BUG CORRIGÉ (21/09/2026) : sans le filtre supprime_le, un site que le
+      // client avait supprimé restait mélangé aux clients actifs dans tous
+      // les onglets (à livrer, actifs, renouvellements...) sans aucune
+      // indication, et son montant comptait toujours dans le KPI "Revenu
+      // total" — l'historique des paiements (table sama_site.paiements)
+      // reste de toute façon conservé séparément pour la comptabilité, voir
+      // migration_selfhosted_20260921_suppression_site.sql.
+      supabase.from("sites").select("*").is("supprime_le", null).order("created_at", { ascending: false }),
       supabase.from("relances").select("site_id, canal, created_at").order("created_at", { ascending: false }),
       // Facultatif : tant que la migration "modifications_facturables" n'est
       // pas encore appliquée en production, cette requête échoue simplement
