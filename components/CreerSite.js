@@ -32,7 +32,7 @@ export default function CreerSite() {
   const [secteurId, setSecteurId] = useState(secteurDepuisURL || null);
   const [business, setBusiness] = useState({
     nom: "", accroche: "", whatsapp: "", adresse: "", email: "",
-    banniere: null, texteBanniere: "", lienGoogleMaps: "", logo: null, couleurs: null,
+    banniere: null, lienGoogleMaps: "", logo: null, couleurs: null,
     produits: [], reseaux: { facebook: "", instagram: "", tiktok: "", twitter: "" },
     modesLivraison: [], metier: "", metierGroupe: "", horaires: horairesParDefaut(),
   });
@@ -659,14 +659,11 @@ export default function CreerSite() {
               <div className="mb-4">
                 <div className="relative rounded-xl overflow-hidden mb-2" style={{ height: 100, border: `1.5px solid ${T.bleuClairBord}` }}>
                   <img src={business.banniere} alt="Bannière" className="w-full h-full object-cover" />
-                  <button onClick={() => setBusiness((b) => ({ ...b, banniere: null, texteBanniere: "" }))}
+                  <button onClick={() => setBusiness((b) => ({ ...b, banniere: null }))}
                     className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(15,23,42,0.6)" }}>
                     <X size={14} color="#fff" />
                   </button>
                 </div>
-                <input value={business.texteBanniere} onChange={(e) => setBusiness((b) => ({ ...b, texteBanniere: e.target.value }))}
-                  placeholder="Texte affiché sur la bannière (facultatif)" maxLength={40}
-                  className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ background: T.blanc, border: `1.5px solid ${T.bleuClairBord}` }} />
               </div>
             ) : (
               <label className="flex items-center justify-center gap-2 rounded-xl mb-4 cursor-pointer" style={{ height: 76, background: T.bleuClair, border: `1.5px dashed ${T.bleuClairBord}` }}>

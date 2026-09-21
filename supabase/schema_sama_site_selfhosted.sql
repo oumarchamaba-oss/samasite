@@ -499,7 +499,7 @@ stable
 as $$
   select nom_entreprise, secteur_id, statut
   from sama_site.sites
-  where statut <> 'expire'
+  where statut <> 'expire' and supprime_le is null
   order by created_at desc
   limit 30;
 $$;
