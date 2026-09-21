@@ -73,5 +73,14 @@ export default async function PageSitePublicParSlug({ params }) {
     );
   }
 
-  return <SiteDesktop secteur={secteur} business={businessDepuisSite(site)} paye={site.statut === "actif"} />;
+  // On ne passe JAMAIS l'objet `secteur` en entier ici : il contient des
+  // composants d'icône lucide-react (fonctions), et cette page est un
+  // Composant Serveur qui rend un Composant Client ("use client" dans
+  // SiteDesktop.js) — React ne peut pas sérialiser une fonction à travers
+  // cette frontière ("Functions cannot be passed directly to Client
+  // Components..."), ce qui provoquait l'erreur 500 vue en production sur
+  // ce lien public (digest 417911372). Seul secteurId (une chaîne, donc
+  // sérialisable) traverse la frontière ; SiteDesktop retrouve lui-même
+  // l'objet secteur complet côté client via lib/data.js.
+  return <SiteDesktop secteurId={site.secteur_id} business={businessDepuisSite(site)} paye={site.statut === "actif"} />;
 }

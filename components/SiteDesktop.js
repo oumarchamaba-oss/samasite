@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { MessageCircle, Phone, Mail, MapPin, ExternalLink, Clock } from "lucide-react";
-import { T, SECTEUR_COULEURS, RESEAUX_SOCIAUX, MODES_LIVRAISON, genererSchema, trouverMetier, trouverIconeMetier, assombrir, paletteIdPour, formaterHoraires } from "../lib/data";
+import { T, SECTEURS, SECTEUR_COULEURS, RESEAUX_SOCIAUX, MODES_LIVRAISON, genererSchema, trouverMetier, trouverIconeMetier, assombrir, paletteIdPour, formaterHoraires } from "../lib/data";
 import { useReveal } from "../lib/useReveal";
 
 function normaliserItems(rawItems) {
@@ -41,7 +41,14 @@ function CarteProduit({ item, index, p, Icon, nom, actionLabel, whatsapp, suffix
   );
 }
 
-export default function SiteDesktop({ secteur, business, paye }) {
+export default function SiteDesktop({ secteur: secteurRecu, secteurId, business, paye }) {
+  // secteur peut arriver soit en objet complet (appel depuis un composant déjà
+  // "use client", ex. app/site/[token]/page.js), soit en simple secteurId
+  // (appel depuis un Composant Serveur, ex. app/s/[slug]/page.js) — un objet
+  // secteur contient des composants d'icône lucide-react (des fonctions), non
+  // sérialisables à travers la frontière Serveur → Client : il doit donc être
+  // retrouvé ICI, côté client, plutôt que reçu tel quel d'un Composant Serveur.
+  const secteur = secteurRecu || SECTEURS.find((s) => s.id === secteurId);
   const [categorieActive, setCategorieActive] = useState("Tous");
   const modesDispo = (business.modesLivraison && business.modesLivraison.length ? business.modesLivraison : secteur.modesLivraison) || [];
   const [modeCommande, setModeCommande] = useState(modesDispo[0] || null);
