@@ -20,7 +20,7 @@
 import { notFound } from "next/navigation";
 import { T, SECTEURS } from "../../../lib/data";
 import { supabase } from "../../../lib/supabaseClient";
-import { estPublie, businessDepuisSite } from "../../../lib/sitePublic";
+import { estPublie, businessDepuisSite, iconesDepuisLogo } from "../../../lib/sitePublic";
 import SiteDesktop from "../../../components/SiteDesktop";
 import { Clock } from "lucide-react";
 
@@ -37,9 +37,11 @@ export async function generateMetadata({ params }) {
   // ne pas le répéter ici.
   const site = await chargerSite(params.slug);
   if (!site) return { title: "Site introuvable" };
+  const icons = iconesDepuisLogo(site.logo_url);
   return {
     title: site.nom_entreprise,
     description: site.accroche || `Découvrez ${site.nom_entreprise} sur Sama Site.`,
+    ...(icons ? { icons } : {}),
   };
 }
 
