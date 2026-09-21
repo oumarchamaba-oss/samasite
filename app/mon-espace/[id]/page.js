@@ -24,7 +24,12 @@ export default function PageGererSite({ params }) {
       }
       // La RLS ne renvoie ce site que s'il appartient bien à l'utilisateur connecté
       // (ou si c'est l'administrateur) — sinon la ligne n'apparaît simplement pas.
-      const { data, error } = await supabase.from("sites").select("*").eq("id", id).single();
+      // BUG CORRIGÉ (21/09/2026) : cette requête ne filtrait pas supprime_le, donc
+      // un site que le propriétaire venait de supprimer restait accessible et
+      // modifiable via ce lien direct — contredisant le message de confirmation de
+      // suppression ("le site ne sera plus accessible, ni par vous ni par vos
+      // clients"). Voir aussi supprimer_site_proprietaire() côté base.
+      const { data, error } = await supabase.from("sites").select("*").eq("id", id).is("supprime_le", null).single();
       if (error || !data) {
         setErreur("Ce site est introuvable, ou ne vous appartient pas.");
       } else {
