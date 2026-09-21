@@ -27,14 +27,16 @@ function CarteSite({ site }) {
   const secteur = SECTEURS.find((s) => s.id === site.secteur_id);
   const nom = site.nom_entreprise || secteur?.demo?.nom || "Mon site";
   const paye = site.statut === "actif";
-  // Lien réellement fonctionnel : tant qu'aucun nom de domaine personnalisé
-  // n'est réellement raccordé (DNS pointé vers Sama Site), le seul lien qui
-  // ouvre vraiment le site est celui-ci — voir app/site/[token]/page.js.
-  const lien = paye && site.domaine ? site.domaine : `samasite.online/site/${site.edit_token}`;
+  // Lien PUBLIC à partager (court, lisible, jamais de bouton "Modifier") —
+  // voir app/s/[slug]/page.js. Repli sur /site/{edit_token} (ancien lien,
+  // toujours fonctionnel) uniquement pour un site créé juste avant que la
+  // migration qui ajoute "slug" ait tourné côté base.
+  const cheminSite = site.slug ? `s/${site.slug}` : `site/${site.edit_token}`;
+  const lien = paye && site.domaine ? site.domaine : `samasite.online/${cheminSite}`;
   const statut = statutReel(site);
   const [lienCopie, setLienCopie] = useState(false);
   const copierLien = () => {
-    const url = paye && site.domaine ? `https://${site.domaine}` : `https://samasite.online/site/${site.edit_token}`;
+    const url = paye && site.domaine ? `https://${site.domaine}` : `https://samasite.online/${cheminSite}`;
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(url).then(() => { setLienCopie(true); setTimeout(() => setLienCopie(false), 2000); }).catch(() => {});
     }
@@ -55,7 +57,7 @@ function CarteSite({ site }) {
         {statut === "expire" && <Badge tone="rouge"><Clock size={11} /> Expiré</Badge>}
       </div>
       <div className="flex items-center gap-2 mb-4">
-        <a href={paye && site.domaine ? `https://${site.domaine}` : `/site/${site.edit_token}`} target="_blank" rel="noopener noreferrer"
+        <a href={paye && site.domaine ? `https://${site.domaine}` : `/${cheminSite}`} target="_blank" rel="noopener noreferrer"
           className="flex-1 flex items-center gap-2 text-sm px-3.5 py-2.5 rounded-lg min-w-0" style={{ background: T.bleuClair, color: T.bleu, textDecoration: "underline" }}>
           <Globe size={14} className="shrink-0" /> <span className="truncate">{lien}</span>
         </a>

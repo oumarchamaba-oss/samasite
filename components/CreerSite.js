@@ -42,10 +42,13 @@ export default function CreerSite() {
   const [traitementAPI, setTraitementAPI] = useState(false);
   const [siteId, setSiteId] = useState(null);
   const [siteEditToken, setSiteEditToken] = useState(null);
+  // Lien de GESTION privé (édition sans compte) — jamais affiché comme "le"
+  // lien du site, voir siteSlug ci-dessous pour le lien public à partager.
+  const [siteSlug, setSiteSlug] = useState(null);
   const [lienCopie, setLienCopie] = useState(false);
   const copierLienSite = () => {
-    if (!siteEditToken) return;
-    const lien = `https://samasite.online/site/${siteEditToken}`;
+    if (!siteSlug) return;
+    const lien = `https://samasite.online/s/${siteSlug}`;
     const declencherRetour = () => { setLienCopie(true); setTimeout(() => setLienCopie(false), 2000); };
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(lien).then(declencherRetour).catch(() => {});
@@ -296,6 +299,7 @@ export default function CreerSite() {
     }
     setSiteId(data.id);
     setSiteEditToken(data.edit_token);
+    setSiteSlug(data.slug || null);
     setStep(4);
   };
 
@@ -813,7 +817,7 @@ export default function CreerSite() {
             <div>
               <p className="font-semibold text-sm" style={{ color: T.jauneFonce }}>Votre site est en ligne pour 2 jours d'essai</p>
               <p className="text-xs mt-0.5" style={{ color: T.jauneFonce }}>
-                Publié sur <strong>samasite.online/site/{siteEditToken || "…"}</strong> — passé ce délai sans paiement, le site n'est plus publié (il reste dans votre compte).
+                Publié sur <strong>samasite.online/s/{siteSlug || "…"}</strong> — passé ce délai sans paiement, le site n'est plus publié (il reste dans votre compte).
               </p>
             </div>
           </div>
@@ -831,11 +835,11 @@ export default function CreerSite() {
             <div className="space-y-4">
               <h3 className="text-2xl font-bold" style={{ color: T.encre }}>Ça vous plaît ?</h3>
               <p className="text-sm" style={{ color: T.gris }}>Partagez le lien à vos clients pendant l'essai. Pour garder le site et passer à votre propre nom de domaine, activez votre abonnement.</p>
-              {siteEditToken && (
+              {siteSlug && (
                 <div className="flex items-center gap-2">
-                  <a href={`/site/${siteEditToken}`} target="_blank" rel="noopener noreferrer"
+                  <a href={`/s/${siteSlug}`} target="_blank" rel="noopener noreferrer"
                     className="flex-1 flex items-center gap-2 text-xs px-3.5 py-2.5 rounded-lg min-w-0" style={{ background: T.bleuClair, color: T.bleu, textDecoration: "underline" }}>
-                    <Globe size={14} className="shrink-0" /> <span className="truncate">samasite.online/site/{siteEditToken}</span>
+                    <Globe size={14} className="shrink-0" /> <span className="truncate">samasite.online/s/{siteSlug}</span>
                   </a>
                   <button type="button" onClick={copierLienSite} title="Copier le lien"
                     className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-semibold shrink-0 transition-colors"
@@ -844,8 +848,8 @@ export default function CreerSite() {
                   </button>
                 </div>
               )}
-              {siteEditToken && (
-                <a href={`/site/${siteEditToken}`} target="_blank" rel="noopener noreferrer"
+              {siteSlug && (
+                <a href={`/s/${siteSlug}`} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold bouton-hover" style={{ background: T.bleu, color: T.blanc }}>
                   <Globe size={15} /> Voir mon site en ligne
                 </a>

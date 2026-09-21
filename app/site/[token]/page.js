@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AlertCircle, ArrowRight, User, CalendarDays, Edit3, Clock } from "lucide-react";
 import { T, SECTEURS } from "../../../lib/data";
 import { supabase } from "../../../lib/supabaseClient";
+import { estPublie, businessDepuisSite } from "../../../lib/sitePublic";
 import NavPublic from "../../../components/NavPublic";
 import EditerSite from "../../../components/EditerSite";
 import SiteDesktop from "../../../components/SiteDesktop";
@@ -19,50 +20,8 @@ import SiteDesktop from "../../../components/SiteDesktop";
 // (SiteDesktop) par défaut pour tout le monde, et réserve le formulaire
 // d'édition à une action explicite ("Modifier ce site"), réservée au
 // propriétaire connecté (ou, pour un site créé sans compte, au détenteur du
-// lien privé).
-
-// Même règle que estModifiable() dans EditerSite.js — un site n'est publié
-// publiquement que si son essai gratuit ou son abonnement payé n'a pas
-// dépassé sa date d'expiration. Rien n'écrit cette expiration en base
-// automatiquement (voir commentaires dans EditerSite.js / MonEspace.js) :
-// elle est donc recalculée ici à chaque affichage, exactement de la même
-// façon, pour que "publié" et "modifiable" restent toujours cohérents.
-function estPublie(site) {
-  if (!site) return false;
-  const maintenant = new Date();
-  if (["essai", "a_livrer"].includes(site.statut)) {
-    return site.essai_expire_le && new Date(site.essai_expire_le) > maintenant;
-  }
-  if (site.statut === "actif") {
-    return !site.abonnement_expire_le || new Date(site.abonnement_expire_le) > maintenant;
-  }
-  return false;
-}
-
-// Les composants de rendu (SiteDesktop, ApercuSite) attendent un objet
-// "business" en camelCase, construit à l'origine depuis le formulaire de
-// création (voir CreerSite.js) — on refait ici exactement le même objet à
-// partir des colonnes (snake_case) de la table sites.
-function businessDepuisSite(site) {
-  return {
-    nom: site.nom_entreprise || "",
-    accroche: site.accroche || "",
-    whatsapp: site.whatsapp || "",
-    adresse: site.adresse || "",
-    email: site.email || "",
-    banniere: site.banniere_url || null,
-    texteBanniere: "",
-    lienGoogleMaps: site.lien_google_maps || "",
-    logo: site.logo_url || null,
-    couleurs: site.couleurs || null,
-    produits: site.produits || [],
-    reseaux: site.reseaux || {},
-    modesLivraison: site.modes_livraison || [],
-    metier: site.metier || "",
-    metierGroupe: site.metier_groupe || "",
-    horaires: site.horaires || null,
-  };
-}
+// lien privé). estPublie() / businessDepuisSite() viennent maintenant de
+// lib/sitePublic.js, partagées avec app/s/[slug]/page.js.
 
 export default function PageSiteParJeton({ params }) {
   const { token } = params;
