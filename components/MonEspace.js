@@ -27,7 +27,7 @@ function CarteSite({ site }) {
   const secteur = SECTEURS.find((s) => s.id === site.secteur_id);
   const nom = site.nom_entreprise || secteur?.demo?.nom || "Mon site";
   const paye = site.statut === "actif";
-  const lien = paye && site.domaine ? site.domaine : `www.${nom.toLowerCase().replace(/\s+/g, "")}.samasite.com`;
+  const lien = paye && site.domaine ? site.domaine : `www.${nom.toLowerCase().replace(/\s+/g, "")}.samasite.online`;
   const statut = statutReel(site);
 
   return (

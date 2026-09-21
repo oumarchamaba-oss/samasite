@@ -3,13 +3,13 @@ import "./globals.css";
 const DESCRIPTION = "Créez votre site e-commerce WhatsApp en quelques minutes, sans coder.";
 
 export const metadata = {
-  metadataBase: new URL("https://samasite.com"),
+  metadataBase: new URL("https://samasite.online"),
   title: { default: "Sama Site", template: "%s — Sama Site" },
   description: DESCRIPTION,
   openGraph: {
     title: "Sama Site",
     description: DESCRIPTION,
-    url: "https://samasite.com",
+    url: "https://samasite.online",
     siteName: "Sama Site",
     locale: "fr_SN",
     type: "website",

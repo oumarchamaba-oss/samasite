@@ -12,6 +12,6 @@ export default function robots() {
         "/api",
       ],
     },
-    sitemap: "https://samasite.com/sitemap.xml",
+    sitemap: "https://samasite.online/sitemap.xml",
   };
 }

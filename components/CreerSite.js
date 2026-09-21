@@ -456,7 +456,7 @@ export default function CreerSite() {
               <h2 className="text-3xl font-bold mb-1" style={{ color: T.encre }}>{groupeMetierOuvert}</h2>
               <p className="text-sm mb-8" style={{ color: T.gris }}>Choisissez le métier précis qui correspond à votre activité.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {METIERS_ARTISANAT.find((g) => g.nom === groupeMetierOuvert).metiers.map((m) => {
+                {(METIERS_ARTISANAT.find((g) => g.nom === groupeMetierOuvert)?.metiers || []).map((m) => {
                   const MIcon = m.icon;
                   const choisi = business.metier === m.nom;
                   return (
