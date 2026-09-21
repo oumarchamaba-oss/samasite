@@ -89,10 +89,19 @@ export default function EditerSite({ mode, token, site: siteInitial, onSaved }) 
 
   const ajouterProduit = () => {
     if (!nouveauTexte.trim()) return;
-    majChamp("produits", [...(site.produits || []), { texte: nouveauTexte, prix: nouveauPrix }]);
+    // id persistant (21/09/2026, parité avec CreerSite.js) : voir demande du
+    // 21/09/2026, point 6 — un produit garde le même id de sa création à sa
+    // suppression, y compris quand il est modifié plusieurs fois ici.
+    majChamp("produits", [...(site.produits || []), { id: crypto.randomUUID(), texte: nouveauTexte, prix: nouveauPrix, categorie: "", image: null, description: "" }]);
     setNouveauTexte(""); setNouveauPrix("");
   };
   const retirerProduit = (i) => majChamp("produits", site.produits.filter((_, idx) => idx !== i));
+  const imageProduitEdit = (i, file) => lireImage(file, (dataUrl) => {
+    majChamp("produits", site.produits.map((p, idx) => (idx === i ? { ...p, image: dataUrl } : p)));
+  });
+  const champProduitEdit = (i, champ, valeur) => {
+    majChamp("produits", site.produits.map((p, idx) => (idx === i ? { ...p, [champ]: valeur } : p)));
+  };
 
   const messageErreur = (err) => {
     const detail = err?.message || "";
@@ -329,11 +338,29 @@ export default function EditerSite({ mode, token, site: siteInitial, onSaved }) 
             className="w-24 rounded-xl px-3 py-2.5 text-sm outline-none" style={{ border: `1.5px solid ${T.bleuClairBord}` }} />
           <button type="button" onClick={ajouterProduit} className="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0" style={{ background: T.bleu }}><Plus size={18} /></button>
         </div>
+        {/* Parité avec l'étape 3 de CreerSite.js (21/09/2026, point 5) : ici
+            aussi, on peut ajouter une photo, une catégorie et une description
+            à un produit déjà créé, sans devoir recréer le site. */}
         <div className="space-y-2 mb-6">
           {(site.produits || []).map((item, i) => (
-            <div key={i} className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: T.bleuClair }}>
-              <span className="text-sm" style={{ color: T.encre }}>{item.texte} {item.prix && `— ${item.prix}`}</span>
-              <button type="button" onClick={() => retirerProduit(i)}><Trash2 size={14} color={T.gris} /></button>
+            <div key={item.id || i} className="rounded-lg p-2.5" style={{ background: T.bleuClair }}>
+              <div className="flex items-center gap-2.5">
+                <label className="w-9 h-9 rounded-lg overflow-hidden shrink-0 flex items-center justify-center cursor-pointer" style={{ background: item.image ? "transparent" : T.blanc, border: `1px dashed ${T.bleuClairBord}` }}>
+                  {item.image ? <img src={item.image} alt="" className="w-full h-full object-cover" /> : <Upload size={13} color={T.gris} />}
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => imageProduitEdit(i, e.target.files[0])} />
+                </label>
+                <span className="text-sm flex-1" style={{ color: T.encre }}>{item.texte}</span>
+                <button type="button" onClick={() => retirerProduit(i)}><Trash2 size={14} color={T.gris} /></button>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5 mt-2">
+                <input value={item.prix || ""} onChange={(e) => champProduitEdit(i, "prix", e.target.value)} placeholder="Prix"
+                  className="rounded-lg px-3 py-2 text-xs outline-none" style={{ background: T.blanc, border: `1px solid ${T.bleuClairBord}` }} />
+                <input value={item.categorie || ""} onChange={(e) => champProduitEdit(i, "categorie", e.target.value)} placeholder="Catégorie"
+                  className="rounded-lg px-3 py-2 text-xs outline-none" style={{ background: T.blanc, border: `1px solid ${T.bleuClairBord}` }} />
+              </div>
+              <input value={item.description || ""} onChange={(e) => champProduitEdit(i, "description", e.target.value)}
+                placeholder="Description détaillée (facultative)"
+                className="w-full mt-1.5 rounded-lg px-3 py-2 text-xs outline-none" style={{ background: T.blanc, border: `1px solid ${T.bleuClairBord}` }} />
             </div>
           ))}
         </div>

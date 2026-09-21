@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { MessageCircle, Phone, Mail, MapPin, ExternalLink, Clock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { MessageCircle, Phone, Mail, MapPin, ExternalLink, Clock, X, Maximize2 } from "lucide-react";
 import { T, SECTEURS, SECTEUR_COULEURS, RESEAUX_SOCIAUX, MODES_LIVRAISON, genererSchema, trouverMetier, trouverIconeMetier, assombrir, paletteIdPour, formaterHoraires } from "../lib/data";
 import { useReveal } from "../lib/useReveal";
 
@@ -19,7 +19,7 @@ function whatsappHref(number, message = "") {
 
 // Carte produit/service individuelle — s'anime à l'entrée dans le viewport,
 // avec un léger décalage (stagger) selon sa position dans la liste.
-function CarteProduit({ item, index, p, Icon, nom, actionLabel, whatsapp, suffixeMode }) {
+function CarteProduit({ item, index, p, Icon, nom, actionLabel, whatsapp, suffixeMode, onOuvrirImage }) {
   const [ref, visible] = useReveal();
   const message = `Bonjour ${nom}, je souhaite ${actionLabel.toLowerCase()} : ${item.texte}${item.prix ? ` (${item.prix})` : ""}${suffixeMode}.`;
   return (
@@ -28,7 +28,20 @@ function CarteProduit({ item, index, p, Icon, nom, actionLabel, whatsapp, suffix
       style={{ background: T.blanc, border: `1px solid ${T.bleuClairBord}`, boxShadow: "0 2px 8px rgba(15,23,42,.06)", transitionDelay: `${Math.min(index, 6) * 70}ms` }}
       className={`reveal ${visible ? "reveal-visible" : ""} carte-hover snap-start shrink-0 w-[250px] sm:w-[270px] rounded-2xl overflow-hidden flex flex-col`}
     >
-      {item.image ? <img src={item.image} alt={item.texte} className="w-full h-40 object-cover" /> : <div className="w-full h-40 flex items-center justify-center" style={{ background: p.fond }}><Icon size={42} color={p.primaire} strokeWidth={1.35} /></div>}
+      {item.image ? (
+        // Vignette recadrée (object-cover) pour garder des cartes homogènes,
+        // quelle que soit l'orientation de la photo (verticale, horizontale,
+        // carrée) — la photo complète, non recadrée, s'affiche au clic dans
+        // le lightbox ci-dessous (voir demande du 21/09/2026, points 2 et 3).
+        <button type="button" onClick={() => onOuvrirImage?.(item)} className="relative w-full h-40 block group" aria-label={`Voir la photo complète de ${item.texte}`}>
+          <img src={item.image} alt={item.texte} className="w-full h-40 object-cover" />
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ background: "rgba(15,23,42,.35)" }}>
+            <Maximize2 size={20} color="#fff" />
+          </div>
+        </button>
+      ) : (
+        <div className="w-full h-40 flex items-center justify-center" style={{ background: p.fond }}><Icon size={42} color={p.primaire} strokeWidth={1.35} /></div>
+      )}
       <div className="p-4 flex flex-col flex-1">
         <h3 className="text-sm font-bold leading-snug" style={{ color: T.encre }}>{item.texte}</h3>
         {item.description && <p className="text-xs leading-relaxed mt-1.5 line-clamp-2" style={{ color: T.gris }}>{item.description}</p>}
@@ -50,6 +63,17 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
   // retrouvé ICI, côté client, plutôt que reçu tel quel d'un Composant Serveur.
   const secteur = secteurRecu || SECTEURS.find((s) => s.id === secteurId);
   const [categorieActive, setCategorieActive] = useState("Tous");
+  // Lightbox photo produit (21/09/2026, point 3) : null = fermé, sinon
+  // l'item dont on affiche la photo en plein format, ratio d'origine.
+  const [imageOuverte, setImageOuverte] = useState(null);
+  useEffect(() => {
+    if (!imageOuverte) return;
+    const surEchap = (e) => { if (e.key === "Escape") setImageOuverte(null); };
+    window.addEventListener("keydown", surEchap);
+    const overflowPrecedent = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", surEchap); document.body.style.overflow = overflowPrecedent; };
+  }, [imageOuverte]);
   const modesDispo = (business.modesLivraison && business.modesLivraison.length ? business.modesLivraison : secteur.modesLivraison) || [];
   const [modeCommande, setModeCommande] = useState(modesDispo[0] || null);
   const demoMetier = business.metier ? trouverMetier(business.metier)?.demo : null;
@@ -172,7 +196,7 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
 
           <div className="flex gap-5 overflow-x-auto pb-3 snap-x" style={{ scrollbarWidth: "none" }}>
             {itemsAffiches.map((item, i) => (
-              <CarteProduit key={`${item.texte}-${i}`} item={item} index={i} p={p} Icon={Icon} nom={nom} actionLabel={actionLabel} whatsapp={business.whatsapp} suffixeMode={suffixeMode} />
+              <CarteProduit key={item.id || `${item.texte}-${i}`} item={item} index={i} p={p} Icon={Icon} nom={nom} actionLabel={actionLabel} whatsapp={business.whatsapp} suffixeMode={suffixeMode} onOuvrirImage={setImageOuverte} />
             ))}
           </div>
         </div>
@@ -222,6 +246,39 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
           </div>
         </div>
       </footer>
+
+      {/* LIGHTBOX PHOTO PRODUIT (21/09/2026, point 3) : photo affichée en
+          entier avec son ratio d'origine (object-contain, jamais recadrée),
+          fermeture par la croix, un clic en dehors de la photo, ou Échap. */}
+      {imageOuverte && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 sm:p-8 entree-douce"
+          style={{ background: "rgba(15,23,42,.92)" }}
+          onClick={() => setImageOuverte(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setImageOuverte(null)}
+            aria-label="Fermer"
+            className="absolute top-4 right-4 sm:top-6 sm:right-6 w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-200 hover:bg-white/20"
+            style={{ background: "rgba(255,255,255,.12)" }}
+          >
+            <X size={20} color="#fff" />
+          </button>
+          <img
+            src={imageOuverte.image}
+            alt={imageOuverte.texte}
+            className="max-w-full max-h-[80vh] object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+          {(imageOuverte.texte || imageOuverte.prix) && (
+            <div className="mt-4 text-center" onClick={(e) => e.stopPropagation()}>
+              <p className="text-white font-bold text-sm sm:text-base">{imageOuverte.texte}</p>
+              {imageOuverte.prix && <p className="text-white/70 text-xs sm:text-sm mt-1">{imageOuverte.prix}</p>}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -211,7 +211,10 @@ export default function CreerSite() {
 
   const ajouterProduit = () => {
     if (!nouveauProduit.trim()) return;
-    setBusiness((b) => ({ ...b, produits: [...b.produits, { texte: nouveauProduit.trim(), prix: nouveauPrix.trim(), categorie: nouvelleCategorie.trim(), image: null, description: "" }] }));
+    // id persistant (21/09/2026) : chaque produit garde le même identifiant
+    // de sa création jusqu'à sa suppression, même après plusieurs allers-
+    // retours entre les étapes — voir demande du 21/09/2026, point 6.
+    setBusiness((b) => ({ ...b, produits: [...b.produits, { id: crypto.randomUUID(), texte: nouveauProduit.trim(), prix: nouveauPrix.trim(), categorie: nouvelleCategorie.trim(), image: null, description: "" }] }));
     setNouveauProduit(""); setNouveauPrix(""); setNouvelleCategorie("");
   };
   const retirerProduit = (i) => setBusiness((b) => ({ ...b, produits: b.produits.filter((_, idx) => idx !== i) }));
@@ -282,6 +285,35 @@ export default function CreerSite() {
       modes_livraison: business.modesLivraison || [],
       horaires: business.horaires || null,
     };
+
+    // BUG CORRIGÉ (21/09/2026) : cette fonction faisait toujours un insert(),
+    // même si le site avait déjà été publié une première fois plus tôt dans
+    // la même session (siteId déjà connu). Concrètement : créer → publier →
+    // revenir à l'étape 3 → modifier/ajouter un produit → cliquer à nouveau
+    // sur "Publier" créait un SECOND site en base, orphelinant le premier —
+    // exactement le scénario de doublon décrit dans la demande du
+    // 21/09/2026 (points 6 et 8). Si siteId existe déjà, on MET À JOUR le
+    // site existant (modifier_site_proprietaire, le même chemin que "Gérer
+    // mon site") au lieu d'en recréer un nouveau : republier devient
+    // idempotent, comme demandé au point 8.
+    if (siteId) {
+      const { data, error } = await supabase.rpc("modifier_site_proprietaire", { p_site_id: siteId, p_champs: champsCommuns });
+      setPublicationEnCours(false);
+      if (error) {
+        if (await estErreurSession(error)) {
+          sauvegarderBrouillon(3);
+          setSessionExpiree(true);
+          setErreurPublication("Votre session a expiré. Reconnectez-vous pour continuer la publication — toutes vos informations ont été conservées.");
+          return;
+        }
+        setErreurPublication(messageErreurPublication(error));
+        return;
+      }
+      const siteMaj = Array.isArray(data) ? data[0] : data;
+      if (siteMaj?.slug) setSiteSlug(siteMaj.slug);
+      setStep(4);
+      return;
+    }
 
     const { data, error } = await supabase.from("sites").insert([{ ...champsCommuns, statut: "essai", user_id: session.user.id }]).select().single();
     setPublicationEnCours(false);
@@ -373,14 +405,22 @@ export default function CreerSite() {
           const Icon = s.icon;
           const actif = step === s.n || (s.n === 1 && step === 1.5);
           const fait = step > s.n && step !== 1.5;
+          // Navigation non-linéaire (21/09/2026, point 4) : une étape déjà
+          // franchie reste cliquable pour y revenir directement, sans perdre
+          // ce qui a été rempli plus loin — "business" reste la même source
+          // de données unique tout au long de l'assistant (voir point 7). On
+          // ne permet pas de sauter vers une étape pas encore atteinte.
+          const accessible = fait || actif;
           return (
             <React.Fragment key={s.n}>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: actif ? T.bleu : fait ? T.bleuClair : "transparent" }}>
+              <button type="button" disabled={!accessible} onClick={() => accessible && setStep(s.n)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full disabled:cursor-default"
+                style={{ background: actif ? T.bleu : fait ? T.bleuClair : "transparent", cursor: accessible ? "pointer" : "default" }}>
                 <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: actif ? T.jaune : fait ? T.bleu : T.bleuClairBord }}>
                   {fait ? <Check size={13} color={T.blanc} strokeWidth={3} /> : <Icon size={13} color={actif ? T.bleuFonce : T.gris} strokeWidth={2.4} />}
                 </div>
                 <span className="text-xs font-semibold hidden sm:inline" style={{ color: actif ? T.blanc : fait ? T.bleu : T.gris }}>{s.label}</span>
-              </div>
+              </button>
               {i < steps.length - 1 && <div className="w-3 h-px" style={{ background: T.bleuClairBord }} />}
             </React.Fragment>
           );
@@ -512,7 +552,7 @@ export default function CreerSite() {
             <input type="file" accept="image/*" className="hidden" onChange={(e) => importerLogo(e.target.files[0])} />
           </label>
 
-          <p className="text-xs font-semibold mb-2" style={{ color: T.gris }}>25 couleurs suggérées pour {secteur.label.toLowerCase()}</p>
+          <p className="text-xs font-semibold mb-2" style={{ color: T.gris }}>{couleursSecteur.length} couleurs suggérées pour {secteur.label.toLowerCase()}</p>
           <div className="grid grid-cols-5 gap-2 mb-6">
             {couleursSecteur.map((couleur) => {
               const actif = business.couleurs?.baseId === couleur.id;
@@ -704,7 +744,7 @@ export default function CreerSite() {
             </div>
             <div className="space-y-2 mb-6">
               {business.produits.map((p, i) => (
-                <div key={i} className="rounded-lg p-2.5" style={{ background: T.bleuClair }}>
+                <div key={p.id || i} className="rounded-lg p-2.5" style={{ background: T.bleuClair }}>
                   <div className="flex items-center gap-2.5">
                     <label className="w-9 h-9 rounded-lg overflow-hidden shrink-0 flex items-center justify-center cursor-pointer" style={{ background: p.image ? "transparent" : T.blanc, border: `1px dashed ${T.bleuClairBord}` }}>
                       {p.image ? <img src={p.image} alt="" className="w-full h-full object-cover" /> : <Image size={14} color={T.gris} />}
