@@ -85,7 +85,12 @@ create table if not exists sama_site.sites (
   -- Suivi pour le téléchargement manuel du site (voir README) : permet de
   -- savoir si le client a modifié son contenu depuis le dernier téléchargement.
   derniere_modification_client_le timestamptz,
-  derniere_livraison_le timestamptz
+  derniere_livraison_le timestamptz,
+
+  -- Suppression "douce" par le propriétaire (voir supprimer_site_proprietaire()
+  -- plus bas) : le site n'est jamais réellement effacé, pour ne pas perdre
+  -- l'historique de paiements associé (on delete cascade sur paiements).
+  supprime_le timestamptz
 );
 
 -- Table des demandes de renouvellement / relance (historique)
@@ -363,9 +368,33 @@ security definer
 set search_path = sama_site, public, extensions
 stable
 as $$
-  select * from sama_site.sites where edit_token = p_token;
+  select * from sama_site.sites where edit_token = p_token and supprime_le is null;
 $$;
 grant execute on function sama_site.obtenir_site_par_jeton to anon, authenticated;
+
+-- Supprime (douce) un site : réservé au propriétaire connecté (ou à l'admin).
+-- Voir supabase/migration_selfhosted_20260921_suppression_site.sql pour le
+-- détail du choix (suppression douce plutôt que DELETE, pour conserver
+-- l'historique de paiements).
+create or replace function sama_site.supprimer_site_proprietaire(p_site_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = sama_site, public, extensions
+as $$
+begin
+  update sama_site.sites
+  set supprime_le = now()
+  where id = p_site_id
+    and supprime_le is null
+    and (user_id = auth.uid() or sama_site.is_admin());
+
+  if not found then
+    raise exception 'Site introuvable, déjà supprimé, ou vous n''en êtes pas propriétaire.';
+  end if;
+end;
+$$;
+grant execute on function sama_site.supprimer_site_proprietaire to authenticated;
 
 -- Modifie un site via son jeton, en respectant les mêmes règles de fenêtre
 -- que pour un compte (essai en cours, ou abonnement actif).

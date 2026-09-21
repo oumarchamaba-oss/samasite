@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Sparkles, Clock, CheckCircle2, ArrowRight, Globe, Edit3, LogOut, Lock, Copy, Check } from "lucide-react";
+import { Sparkles, Clock, CheckCircle2, ArrowRight, Globe, Edit3, LogOut, Lock, Copy, Check, Trash2, AlertTriangle } from "lucide-react";
 import { T, SECTEURS, WHATSAPP_SUPPORT, WHATSAPP_AVATAR, Badge } from "../lib/data";
 import { supabase } from "../lib/supabaseClient";
 
@@ -23,7 +23,7 @@ function statutReel(site) {
   return site.statut; // "expire" littéral, si jamais posé manuellement
 }
 
-function CarteSite({ site }) {
+function CarteSite({ site, onSupprime }) {
   const secteur = SECTEURS.find((s) => s.id === site.secteur_id);
   const nom = site.nom_entreprise || secteur?.demo?.nom || "Mon site";
   const paye = site.statut === "actif";
@@ -40,6 +40,26 @@ function CarteSite({ site }) {
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(url).then(() => { setLienCopie(true); setTimeout(() => setLienCopie(false), 2000); }).catch(() => {});
     }
+  };
+
+  const [confirmationSuppression, setConfirmationSuppression] = useState(false);
+  const [suppressionEnCours, setSuppressionEnCours] = useState(false);
+  const [erreurSuppression, setErreurSuppression] = useState("");
+
+  // Suppression "douce" : le site est marqué supprimé (colonne supprime_le)
+  // via une fonction sécurisée côté base — il disparaît aussitôt d'ici et
+  // n'est plus accessible via aucun lien (public ou privé), mais reste
+  // conservé en base avec son historique de paiements, pour la comptabilité.
+  const supprimerSite = async () => {
+    setSuppressionEnCours(true);
+    setErreurSuppression("");
+    const { error } = await supabase.rpc("supprimer_site_proprietaire", { p_site_id: site.id });
+    setSuppressionEnCours(false);
+    if (error) {
+      setErreurSuppression("La suppression a échoué. Réessayez.");
+      return;
+    }
+    onSupprime(site.id);
   };
 
   return (
@@ -67,16 +87,39 @@ function CarteSite({ site }) {
           {lienCopie ? <Check size={16} /> : <Copy size={16} />}
         </button>
       </div>
-      <div className="flex items-center gap-2 flex-wrap">
-        <Link href={`/mon-espace/${site.id}`} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-semibold" style={{ background: T.bleuClair, color: T.bleu }}>
-          <Edit3 size={13} /> Gérer ce site
-        </Link>
-        {statut === "essai_expire" && (
-          <Link href={`/mon-espace/${site.id}`} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-bold" style={{ background: T.jaune, color: T.bleuFonce }}>
-            Payer maintenant
+      {confirmationSuppression ? (
+        <div className="rounded-xl p-3.5" style={{ background: T.rougeFond }}>
+          <p className="flex items-start gap-1.5 text-xs font-semibold mb-3" style={{ color: T.rouge }}>
+            <AlertTriangle size={14} className="shrink-0 mt-0.5" /> Supprimer "{nom}" ? Le site ne sera plus accessible, ni par vous ni par vos clients.
+          </p>
+          {erreurSuppression && <p className="text-xs mb-2" style={{ color: T.rouge }}>{erreurSuppression}</p>}
+          <div className="flex items-center gap-2">
+            <button type="button" disabled={suppressionEnCours} onClick={supprimerSite}
+              className="flex-1 rounded-lg py-2 text-xs font-bold text-white disabled:opacity-50" style={{ background: T.rouge }}>
+              {suppressionEnCours ? "Suppression…" : "Confirmer la suppression"}
+            </button>
+            <button type="button" disabled={suppressionEnCours} onClick={() => { setConfirmationSuppression(false); setErreurSuppression(""); }}
+              className="rounded-lg py-2 px-3 text-xs font-semibold" style={{ background: T.blanc, color: T.gris, border: `1.5px solid ${T.bleuClairBord}` }}>
+              Annuler
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link href={`/mon-espace/${site.id}`} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-semibold" style={{ background: T.bleuClair, color: T.bleu }}>
+            <Edit3 size={13} /> Gérer ce site
           </Link>
-        )}
-      </div>
+          {statut === "essai_expire" && (
+            <Link href={`/mon-espace/${site.id}`} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-bold" style={{ background: T.jaune, color: T.bleuFonce }}>
+              Payer maintenant
+            </Link>
+          )}
+          <button type="button" onClick={() => setConfirmationSuppression(true)} title="Supprimer ce site"
+            className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-full text-xs font-semibold ml-auto" style={{ color: T.gris }}>
+            <Trash2 size={13} /> Supprimer
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -93,7 +136,7 @@ export default function MonEspace() {
       setSession(sessionData.session);
 
       if (sessionData.session) {
-        const { data } = await supabase.from("sites").select("*").eq("user_id", sessionData.session.user.id).order("created_at", { ascending: false });
+        const { data } = await supabase.from("sites").select("*").eq("user_id", sessionData.session.user.id).is("supprime_le", null).order("created_at", { ascending: false });
         setSites(data || []);
       } else if (typeof window !== "undefined") {
         setJetonLocal(window.localStorage.getItem("sama_site_token"));
@@ -158,7 +201,9 @@ export default function MonEspace() {
         </div>
       ) : (
         <>
-          {sites.map((s) => <CarteSite key={s.id} site={s} />)}
+          {sites.map((s) => (
+            <CarteSite key={s.id} site={s} onSupprime={(id) => setSites((prev) => prev.filter((x) => x.id !== id))} />
+          ))}
           <Link href="/creer" className="flex items-center justify-center gap-1.5 px-4 py-3 rounded-full text-sm font-semibold mb-4" style={{ background: T.bleuClair, color: T.bleu }}>
             <Sparkles size={14} /> Créer un nouveau site
           </Link>
