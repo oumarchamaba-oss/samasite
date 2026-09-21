@@ -33,10 +33,12 @@ async function chargerSite(slug) {
 }
 
 export async function generateMetadata({ params }) {
+  // Le layout racine ajoute déjà " - Sama Site" (voir app/layout.js, title.template) —
+  // ne pas le répéter ici.
   const site = await chargerSite(params.slug);
-  if (!site) return { title: "Site introuvable — Sama Site" };
+  if (!site) return { title: "Site introuvable" };
   return {
-    title: `${site.nom_entreprise} — Sama Site`,
+    title: site.nom_entreprise,
     description: site.accroche || `Découvrez ${site.nom_entreprise} sur Sama Site.`,
   };
 }
