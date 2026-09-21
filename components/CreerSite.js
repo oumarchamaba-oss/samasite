@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Sparkles, MessageCircle, LayoutGrid, ArrowRight, ArrowLeft, Globe, Plus, X, Timer, Wallet,
-  Link2, Check, Copy, RefreshCw, AlertCircle, ClipboardList, MapPin, Mail, Image, Upload, Tag, Monitor,
+  Link2, Check, Copy, RefreshCw, AlertCircle, ClipboardList, MapPin, Mail, Image, Upload, Tag,
   Palette as PaletteIcon, CheckCircle2,
 } from "lucide-react";
 import {
@@ -16,7 +16,6 @@ import { IMG_CONFIRMED } from "../lib/images";
 import { supabase } from "../lib/supabaseClient";
 import { demarrerPaiement } from "../lib/paiementGateway";
 import ApercuSite from "./ApercuSite";
-import ApercuPleinEcran from "./ApercuPleinEcran";
 import AssistantIA from "./AssistantIA";
 import EditeurHoraires from "./EditeurHoraires";
 
@@ -149,7 +148,6 @@ export default function CreerSite() {
   }, [session, searchParams]);
 
   const [nouveauProduit, setNouveauProduit] = useState("");
-  const [apercuComplet, setApercuComplet] = useState(false);
   const [groupeMetierOuvert, setGroupeMetierOuvert] = useState(null);
   const [nouveauPrix, setNouveauPrix] = useState("");
   const [nouvelleCategorie, setNouvelleCategorie] = useState("");
@@ -854,9 +852,6 @@ export default function CreerSite() {
                   <Globe size={15} /> Voir mon site en ligne
                 </a>
               )}
-              <button onClick={() => setApercuComplet(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold bouton-hover" style={{ background: T.encre, color: T.blanc }}>
-                <Monitor size={15} /> Voir le rendu complet (ordinateur et smartphone)
-              </button>
             </div>
           </div>
 
@@ -864,10 +859,6 @@ export default function CreerSite() {
             <button onClick={() => setStep(3)} className="flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold transition-opacity duration-200 hover:opacity-60" style={{ color: T.bleu }}><ArrowLeft size={16} /> Retour</button>
             <button onClick={() => setStep(5)} className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold bouton-hover" style={{ background: T.bleu, color: T.blanc }}>Activer mon site <ArrowRight size={16} /></button>
           </div>
-
-          {apercuComplet && (
-            <ApercuPleinEcran secteur={secteur} business={business} paye={paye} onFermer={() => setApercuComplet(false)} />
-          )}
         </div>
       )}
 
