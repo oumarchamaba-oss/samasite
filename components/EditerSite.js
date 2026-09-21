@@ -270,12 +270,19 @@ export default function EditerSite({ mode, token, site: siteInitial, onSaved }) 
           <>
             <label className="block text-xs font-semibold mb-2" style={{ color: T.gris }}>Couleur</label>
             <div className="grid grid-cols-6 gap-2 mb-5">
-              {couleursSecteur.map(([nom, hex]) => {
-                const selectionne = site.couleurs?.primaire === hex;
+              {couleursSecteur.map((couleur) => {
+                // BUG CORRIGÉ (21/09/2026) : couleursSecteur est un tableau
+                // d'objets { id, name, hex } (voir SECTEUR_COULEURS dans
+                // lib/data.js), pas de tuples [nom, hex] — la déstructuration
+                // en tableau faisait planter toute la page "Gérer ce site"
+                // dès qu'un secteur avec des couleurs suggérées était trouvé
+                // (un objet n'est pas itérable), avec l'erreur générique
+                // "Application error: a client-side exception has occurred".
+                const selectionne = site.couleurs?.primaire === couleur.hex;
                 return (
-                  <button key={hex} type="button" onClick={() => majChamp("couleurs", genererSchema(hex))}
-                    className="w-9 h-9 rounded-full" title={nom}
-                    style={{ background: hex, boxShadow: selectionne ? `0 0 0 2px #fff, 0 0 0 4px ${hex}` : "none" }} />
+                  <button key={couleur.id} type="button" onClick={() => majChamp("couleurs", genererSchema(couleur.hex))}
+                    className="w-9 h-9 rounded-full" title={couleur.name}
+                    style={{ background: couleur.hex, boxShadow: selectionne ? `0 0 0 2px #fff, 0 0 0 4px ${couleur.hex}` : "none" }} />
                 );
               })}
             </div>
