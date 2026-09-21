@@ -27,7 +27,10 @@ function CarteSite({ site }) {
   const secteur = SECTEURS.find((s) => s.id === site.secteur_id);
   const nom = site.nom_entreprise || secteur?.demo?.nom || "Mon site";
   const paye = site.statut === "actif";
-  const lien = paye && site.domaine ? site.domaine : `www.${nom.toLowerCase().replace(/\s+/g, "")}.samasite.online`;
+  // Lien réellement fonctionnel : tant qu'aucun nom de domaine personnalisé
+  // n'est réellement raccordé (DNS pointé vers Sama Site), le seul lien qui
+  // ouvre vraiment le site est celui-ci — voir app/site/[token]/page.js.
+  const lien = paye && site.domaine ? site.domaine : `samasite.online/site/${site.edit_token}`;
   const statut = statutReel(site);
 
   return (
@@ -44,10 +47,11 @@ function CarteSite({ site }) {
         {statut === "essai_expire" && <Badge tone="rouge"><Clock size={11} /> Essai terminé — non payé</Badge>}
         {statut === "expire" && <Badge tone="rouge"><Clock size={11} /> Expiré</Badge>}
       </div>
-      <div className="flex items-center gap-2 text-sm px-3.5 py-2.5 rounded-lg mb-4" style={{ background: T.bleuClair, color: T.bleu }}>
+      <a href={paye && site.domaine ? `https://${site.domaine}` : `/site/${site.edit_token}`} target="_blank" rel="noopener noreferrer"
+        className="flex items-center gap-2 text-sm px-3.5 py-2.5 rounded-lg mb-4" style={{ background: T.bleuClair, color: T.bleu, textDecoration: "underline" }}>
         <Globe size={14} /> {lien}
-      </div>
-      <div className="flex items-center gap-2">
+      </a>
+      <div className="flex items-center gap-2 flex-wrap">
         <Link href={`/mon-espace/${site.id}`} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-semibold" style={{ background: T.bleuClair, color: T.bleu }}>
           <Edit3 size={13} /> Gérer ce site
         </Link>

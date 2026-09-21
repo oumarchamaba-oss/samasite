@@ -41,6 +41,7 @@ export default function CreerSite() {
   const [payeAutomatiquement, setPayeAutomatiquement] = useState(false);
   const [traitementAPI, setTraitementAPI] = useState(false);
   const [siteId, setSiteId] = useState(null);
+  const [siteEditToken, setSiteEditToken] = useState(null);
   const [session, setSession] = useState(undefined); // undefined = pas encore vérifié
   const [publicationEnCours, setPublicationEnCours] = useState(false);
   const [erreurPublication, setErreurPublication] = useState("");
@@ -285,6 +286,7 @@ export default function CreerSite() {
       return;
     }
     setSiteId(data.id);
+    setSiteEditToken(data.edit_token);
     setStep(4);
   };
 
@@ -802,7 +804,7 @@ export default function CreerSite() {
             <div>
               <p className="font-semibold text-sm" style={{ color: T.jauneFonce }}>Votre site est en ligne pour 2 jours d'essai</p>
               <p className="text-xs mt-0.5" style={{ color: T.jauneFonce }}>
-                Publié sur <strong>www.{(business.nom || demoActif.nom).toLowerCase().replace(/\s+/g, "")}.samasite.com</strong> — passé ce délai sans paiement, le site est désactivé.
+                Publié sur <strong>samasite.online/site/{siteEditToken || "…"}</strong> — passé ce délai sans paiement, le site n'est plus publié (il reste dans votre compte).
               </p>
             </div>
           </div>
@@ -820,9 +822,18 @@ export default function CreerSite() {
             <div className="space-y-4">
               <h3 className="text-2xl font-bold" style={{ color: T.encre }}>Ça vous plaît ?</h3>
               <p className="text-sm" style={{ color: T.gris }}>Partagez le lien à vos clients pendant l'essai. Pour garder le site et passer à votre propre nom de domaine, activez votre abonnement.</p>
-              <div className="flex items-center gap-2 text-xs px-3.5 py-2.5 rounded-lg" style={{ background: T.bleuClair, color: T.bleu }}>
-                <Globe size={14} /> www.{(business.nom || demoActif.nom).toLowerCase().replace(/\s+/g, "")}.samasite.com
-              </div>
+              {siteEditToken && (
+                <a href={`/site/${siteEditToken}`} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-xs px-3.5 py-2.5 rounded-lg" style={{ background: T.bleuClair, color: T.bleu, textDecoration: "underline" }}>
+                  <Globe size={14} /> samasite.online/site/{siteEditToken}
+                </a>
+              )}
+              {siteEditToken && (
+                <a href={`/site/${siteEditToken}`} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold bouton-hover" style={{ background: T.bleu, color: T.blanc }}>
+                  <Globe size={15} /> Voir mon site en ligne
+                </a>
+              )}
               <button onClick={() => setApercuComplet(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold bouton-hover" style={{ background: T.encre, color: T.blanc }}>
                 <Monitor size={15} /> Voir le rendu complet (ordinateur et smartphone)
               </button>
