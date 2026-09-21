@@ -82,7 +82,11 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
   const p = business.couleurs || genererSchema(SECTEUR_COULEURS[paletteIdPour(secteur, business)][0].hex);
   const nom = business.nom || demoActif.nom;
   const accroche = business.accroche || demoActif.accroche;
-  const items = normaliserItems(business.produits?.length ? business.produits : demoActif.produits);
+  // BUG CORRIGÉ (21/09/2026) : le site publié affichait les produits de démo du
+  // secteur quand l'entreprise réelle n'avait encore rempli aucun produit —
+  // du contenu fictif apparaissait comme si c'était le catalogue du client.
+  // Le site publié ne doit montrer QUE ce que l'utilisateur a lui-même rempli.
+  const items = normaliserItems(business.produits || []);
   const Icon = business.metier ? trouverIconeMetier(business.metier) : secteur.icon;
   const estService = secteur.type === "service";
   const heroFonce = assombrir(p.primaire, -45);
@@ -100,7 +104,6 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
   const titreHighlight = highlightWords.slice(highlightStart).join(" ");
 
   const [heroTexteRef, heroTexteVisible] = useReveal();
-  const [heroImageRef, heroImageVisible] = useReveal();
   const [produitsHeadRef, produitsHeadVisible] = useReveal();
   const [footerRef, footerVisible] = useReveal();
 
@@ -129,14 +132,29 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
       </header>
 
       {/* 2. HERO */}
-      <section id="accueil" className="scroll-mt-20">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 min-h-[480px] items-stretch">
-          <div ref={heroTexteRef} className={`reveal ${heroTexteVisible ? "reveal-visible" : ""} px-6 md:px-10 py-14 md:py-20 flex flex-col justify-center`}>
+      {/* CORRIGÉ (21/09/2026) : le nom et l'accroche doivent être superposés sur
+          la photo de bannière, exactement comme dans l'aperçu montré pendant la
+          création (ApercuSite.js) — même traitement sur mobile et sur desktop,
+          au lieu de l'ancienne mise en page à deux colonnes où le texte et la
+          photo étaient séparés. */}
+      <section id="accueil" className="scroll-mt-20 relative overflow-hidden min-h-[460px] md:min-h-[560px] flex items-center" style={{ background: p.fond }}>
+        {business.banniere ? (
+          <>
+            <img src={business.banniere} alt={nom} className="absolute inset-0 w-full h-full object-cover" />
+            <div className="absolute inset-0" style={{ background: "linear-gradient(100deg, rgba(255,255,255,.97) 0%, rgba(255,255,255,.90) 38%, rgba(255,255,255,.55) 62%, rgba(255,255,255,.12) 100%)" }} />
+          </>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-end pr-10" style={{ background: `linear-gradient(140deg, ${p.fond}, ${p.primaire}22)` }}>
+            <Icon size={110} color={p.primaire} strokeWidth={1.1} className="hidden md:block" />
+          </div>
+        )}
+        <div ref={heroTexteRef} className={`reveal ${heroTexteVisible ? "reveal-visible" : ""} relative z-10 max-w-6xl mx-auto w-full px-6 md:px-10 py-16 md:py-24`}>
+          <div className="max-w-xl">
             <p className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: p.primaire }}>Bienvenue chez {nom}</p>
             <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.05] tracking-tight" style={{ color: T.encre }}>
               {titreAvant}{titreAvant ? " " : ""}<span style={{ color: p.primaire }}>{titreHighlight}</span>
             </h1>
-            <p className="text-base md:text-lg leading-relaxed mt-5 max-w-xl" style={{ color: T.gris }}>
+            <p className="text-base md:text-lg leading-relaxed mt-5" style={{ color: T.gris }}>
               {business.metier ? `${business.metier} — ` : ""}{estService ? "Des services pensés pour répondre simplement à vos besoins." : "Des produits sélectionnés avec soin pour vous."}
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
@@ -145,17 +163,8 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
               </a>
             </div>
           </div>
-          <div ref={heroImageRef} style={{ transitionDelay: "120ms", background: p.fond }} className={`reveal ${heroImageVisible ? "reveal-visible" : ""} relative min-h-[300px] md:min-h-0 overflow-hidden md:rounded-l-[2rem]`}>
-            {business.banniere ? (
-              <img src={business.banniere} alt={nom} className="absolute inset-0 w-full h-full object-cover" />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center" style={{ background: `linear-gradient(140deg, ${p.fond}, ${p.primaire}22)` }}>
-                <Icon size={96} color={p.primaire} strokeWidth={1.15} />
-              </div>
-            )}
-            {!paye && <div className="absolute bottom-4 right-4 rounded-full px-3 py-1.5 text-[10px] font-semibold text-white" style={{ background: "rgba(15,23,42,.55)" }}>Créé avec Sama Site</div>}
-          </div>
         </div>
+        {!paye && <div className="absolute z-10 bottom-4 right-4 rounded-full px-3 py-1.5 text-[10px] font-semibold text-white" style={{ background: "rgba(15,23,42,.55)" }}>Créé avec Sama Site</div>}
       </section>
 
       {/* 3. PRODUITS / SERVICES */}
@@ -166,17 +175,17 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
             <h2 className="text-2xl md:text-3xl font-extrabold mt-1" style={{ color: T.encre }}>{catalogueLabel}</h2>
           </div>
 
-          {modesDispo.length > 1 && (
-            <div className="flex items-center gap-2 mb-6">
+          {modesDispo.length > 1 && items.length > 0 && (
+            <div className="flex flex-col gap-2 mb-6">
               <span className="text-xs font-semibold" style={{ color: T.gris }}>Comment souhaitez-vous être servi ?</span>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
                 {modesDispo.map((modeId) => {
                   const m = MODES_LIVRAISON[modeId];
                   const MIcon = m.icon;
                   const actif = modeCommande === modeId;
                   return (
                     <button key={modeId} onClick={() => setModeCommande(modeId)}
-                      className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200"
+                      className="shrink-0 whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200"
                       style={{ background: actif ? p.fond : T.blanc, color: actif ? p.primaire : T.gris, border: `1.5px solid ${actif ? p.primaire : T.bleuClairBord}` }}>
                       <MIcon size={12} /> {m.label}
                     </button>
@@ -194,11 +203,24 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
             </div>
           )}
 
-          <div className="flex gap-5 overflow-x-auto pb-3 snap-x" style={{ scrollbarWidth: "none" }}>
-            {itemsAffiches.map((item, i) => (
-              <CarteProduit key={item.id || `${item.texte}-${i}`} item={item} index={i} p={p} Icon={Icon} nom={nom} actionLabel={actionLabel} whatsapp={business.whatsapp} suffixeMode={suffixeMode} onOuvrirImage={setImageOuverte} />
-            ))}
-          </div>
+          {items.length > 0 ? (
+            <div className="flex gap-5 overflow-x-auto pb-3 snap-x" style={{ scrollbarWidth: "none" }}>
+              {itemsAffiches.map((item, i) => (
+                <CarteProduit key={item.id || `${item.texte}-${i}`} item={item} index={i} p={p} Icon={Icon} nom={nom} actionLabel={actionLabel} whatsapp={business.whatsapp} suffixeMode={suffixeMode} onOuvrirImage={setImageOuverte} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center text-center py-14 px-6 rounded-2xl" style={{ background: p.fond, border: `1px solid ${T.bleuClairBord}` }}>
+              <Icon size={36} color={p.primaire} strokeWidth={1.2} />
+              <p className="mt-4 text-sm font-semibold" style={{ color: T.encre }}>{estService ? "Aucun service pour le moment" : "Aucun produit pour le moment"}</p>
+              <p className="mt-1 text-xs max-w-xs" style={{ color: T.gris }}>{nom} n'a pas encore ajouté de {estService ? "service" : "produit"}. Revenez bientôt, ou contactez-nous directement.</p>
+              {business.whatsapp && (
+                <a href={waGeneral} target="_blank" rel="noopener noreferrer" className="bouton-hover inline-flex items-center gap-2 rounded-full px-5 py-2.5 mt-5 text-xs font-bold text-white" style={{ background: heroFonce }}>
+                  <MessageCircle size={14} /> Nous contacter sur WhatsApp
+                </a>
+              )}
+            </div>
+          )}
         </div>
       </section>
 

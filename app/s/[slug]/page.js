@@ -5,9 +5,12 @@
 //   HTML généré côté serveur, sans écran "Chargement…" pendant qu'un
 //   navigateur télécharge le JS puis interroge la base — c'est ce qui
 //   rendait l'ancien lien perceptiblement lent à l'ouverture.
-// - `revalidate` met le résultat en cache 30s : les ouvertures suivantes
-//   sont quasi instantanées, et une modification du site apparaît au plus
-//   tard 30s après avoir été enregistrée.
+// - `revalidate` était fixé à 30s (cache) : un client a signalé le 21/09/2026
+//   qu'un produit tout juste ajouté puis publié restait invisible sur le
+//   lien public — exactement l'effet attendu de ce cache pendant sa fenêtre
+//   de 30s. Puisque "publier" doit être immédiat pour l'utilisateur, cette
+//   page est repassée en rendu dynamique (aucun cache) : chaque ouverture
+//   du lien recharge l'état réel du site en base, sans délai.
 // - Ne connaît JAMAIS l'identité du visiteur (pas de session, pas de
 //   vérification de propriétaire) : aucune action "Modifier ce site" ne
 //   peut donc apparaître ici, pour personne, y compris le propriétaire —
@@ -24,7 +27,8 @@ import { estPublie, businessDepuisSite, iconesDepuisLogo } from "../../../lib/si
 import SiteDesktop from "../../../components/SiteDesktop";
 import { Clock } from "lucide-react";
 
-export const revalidate = 30;
+export const revalidate = 0;
+export const dynamic = "force-dynamic";
 
 async function chargerSite(slug) {
   const { data, error } = await supabase.rpc("obtenir_site_public_par_slug", { p_slug: slug });
