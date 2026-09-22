@@ -1,7 +1,7 @@
 import "./globals.css";
 import { LOGO_SAMASITE } from "../lib/data";
 
-const DESCRIPTION = "Créez votre site e-commerce WhatsApp en quelques minutes, sans coder.";
+const DESCRIPTION = "Créez votre site e-commerce WhatsApp en quelques minutes, avec paiement en ligne inclus (Orange Money, Wave, Visa, Mastercard) — sans coder.";
 
 export const metadata = {
   metadataBase: new URL("https://samasite.online"),

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Sparkles, CheckCircle2, ArrowRight, Briefcase, Phone, Lock, ChevronDown, LayoutTemplate, Palette as PaletteIcon, ShoppingCart, Headphones, Smartphone, ShieldCheck } from "lucide-react";
+import { Sparkles, CheckCircle2, ArrowRight, Briefcase, Phone, Lock, ChevronDown, LayoutTemplate, Palette as PaletteIcon, ShoppingCart, Headphones, Smartphone, ShieldCheck, CreditCard } from "lucide-react";
 import {
   T, SECTEURS, CLIENTS_CONFIANCE, FAQ, COMMENT_CA_MARCHE,
   WHATSAPP_SUPPORT, WHATSAPP_AVATAR, LOGO_SAMASITE, DrapeauSenegal, Badge,
@@ -49,14 +49,15 @@ export default function Accueil({ clients }) {
       <div className="max-w-5xl mx-auto px-5 pt-14 pb-16">
         <div className="grid md:grid-cols-2 gap-10 items-center">
           <div ref={heroTexteRef} className={`reveal ${heroTexteVisible ? "reveal-visible" : ""} text-center md:text-left`}>
-            <div className="inline-flex items-center gap-1.5 mb-5">
+            <div className="inline-flex items-center gap-1.5 mb-5 flex-wrap justify-center md:justify-start">
               <Badge tone="jaune"><Sparkles size={11} /> 2 jours d'essai gratuit, sans carte bancaire</Badge>
+              <Badge tone="vert"><CreditCard size={11} /> Paiement en ligne inclus</Badge>
             </div>
             <h1 className="text-4xl sm:text-5xl font-bold leading-tight" style={{ color: T.encre }}>
               Votre site de vente, prêt en <span style={{ color: T.bleu }}>10 minutes</span>
             </h1>
             <p className="mt-5 text-base max-w-lg mx-auto md:mx-0" style={{ color: T.gris }}>
-              Sama Site crée le mini-site de votre commerce, avec commande directe sur WhatsApp — sans savoir coder, sans agence.
+              Sama Site crée le mini-site de votre commerce, avec commande WhatsApp et paiement en ligne intégré — sans savoir coder, sans agence.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center md:justify-start items-center">
               <Link href="/creer" className="bouton-hover flex items-center gap-2 px-7 py-3.5 rounded-full text-sm font-bold" style={{ background: T.bleu, color: T.blanc }}>
@@ -84,6 +85,7 @@ export default function Accueil({ clients }) {
             { icon: LayoutTemplate, titre: "Modèles professionnels", texte: `${SECTEURS.length} secteurs d'activité, chacun avec son style adapté.` },
             { icon: PaletteIcon, titre: "Personnalisation facile", texte: "Couleurs, logo, produits et contenu, sans coder." },
             { icon: ShoppingCart, titre: "Commande WhatsApp intégrée", texte: "Vos clients commandent en un clic, où qu'ils soient." },
+            { icon: CreditCard, titre: "Paiement en ligne intégré", texte: "Orange Money, Wave, Free Money, Visa, Mastercard — encaissé directement sur votre compte, inclus." },
             { icon: Headphones, titre: "Support client 7j/7", texte: "Une question ? Une équipe vous répond sur WhatsApp." },
             { icon: Smartphone, titre: "100% responsive", texte: "Un rendu soigné, sur ordinateur comme sur smartphone." },
             { icon: ShieldCheck, titre: "Site hébergé et sécurisé", texte: "Votre site en ligne, sans vous soucier de la technique." },
@@ -204,6 +206,7 @@ export default function Accueil({ clients }) {
                 </li>
               ))}
             </ul>
+            <div className="text-[11px] mt-3" style={{ color: T.gris }}>Paiement en ligne débloqué dès le passage à l'abonnement.</div>
           </div>
 
           <div className="carte-hover rounded-2xl p-6 relative" style={{ background: T.blanc, border: `2px solid ${T.bleu}` }}>
@@ -215,7 +218,7 @@ export default function Accueil({ clients }) {
             </div>
             <div className="text-xs mb-4" style={{ color: T.gris }}>Domaine .com inclus · .sn disponible à 35 000 F/6 mois</div>
             <ul className="space-y-2">
-              {["Nom de domaine livré sous 48h", "Site publié et modifiable", "Contact via WhatsApp", "Paiement annuel disponible, moins cher"].map((item, i) => (
+              {["Nom de domaine livré sous 48h", "Site publié et modifiable", "Commande WhatsApp + paiement en ligne inclus (Orange Money, Wave, Free Money, Visa, Mastercard)", "Paiement annuel disponible, moins cher"].map((item, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm" style={{ color: T.encre }}>
                   <CheckCircle2 size={15} color={T.vert} className="mt-0.5 shrink-0" /> {item}
                 </li>
