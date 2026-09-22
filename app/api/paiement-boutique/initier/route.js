@@ -1,12 +1,12 @@
 // Route serveur — ne s'exécute jamais dans le navigateur.
 // C'est ici, et seulement ici, que la clé de service Supabase
-// (SUPABASE_SERVICE_ROLE_KEY) est utilisée pour lire la clé API Vesus d'un
+// (SUPABASE_SERVICE_ROLE_KEY) est utilisée pour lire la clé API Versus d'un
 // site dans sama_site.paiements_boutique_config — une table volontairement
 // SANS AUCUN grant à anon/authenticated (voir
 // supabase/migration_selfhosted_20260922_paiement_en_ligne.sql). Cette clé
 // de service ne doit JAMAIS apparaître dans du code exécuté côté client.
 //
-// Tant que la documentation d'API de Vesus Finances Tech n'a pas été
+// Tant que la documentation d'API de Versus Finances Tech n'a pas été
 // fournie, cette route valide simplement que le site a bien le paiement en
 // ligne actif, puis renvoie "automatique: false" — voir la grande zone
 // commentée plus bas pour l'endroit exact où brancher le vrai appel API.
@@ -46,7 +46,7 @@ export async function POST(request) {
     return Response.json({ automatique: false, lienPaiement: null, reference: null });
   }
 
-  // 2) Clé API Vesus propre à ce site (jamais renvoyée au client).
+  // 2) Clé API Versus propre à ce site (jamais renvoyée au client).
   const { data: config } = await supabaseServeur
     .from("paiements_boutique_config")
     .select("api_key, fournisseur")
@@ -57,10 +57,10 @@ export async function POST(request) {
     return Response.json({ automatique: false, lienPaiement: null, reference: null });
   }
 
-  // --- ZONE À REMPLACER quand la documentation d'API Vesus sera fournie ---
+  // --- ZONE À REMPLACER quand la documentation d'API Versus sera fournie ---
   //
-  // Exemple (à adapter au vrai contrat Vesus Finances Tech) :
-  // const reponse = await fetch("https://api.vesus.sn/v1/paiements", {
+  // Exemple (à adapter au vrai contrat Versus Finances Tech) :
+  // const reponse = await fetch("https://api.Versus.sn/v1/paiements", {
   //   method: "POST",
   //   headers: {
   //     "Content-Type": "application/json",

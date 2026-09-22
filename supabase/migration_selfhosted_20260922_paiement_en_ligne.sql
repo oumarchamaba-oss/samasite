@@ -1,6 +1,6 @@
 -- ============================================================
 -- Migration : paiement en ligne (Orange Money, Wave, Free Money, Visa,
--- Mastercard) pour les produits/services d'un site, via Vesus Finances Tech
+-- Mastercard) pour les produits/services d'un site, via Versus Finances Tech
 -- ============================================================
 -- À exécuter sur le VPS self-hosted (schéma "sama_site").
 --
@@ -9,8 +9,8 @@
 -- paiement en ligne à ses propres clients (en plus de la commande WhatsApp
 -- déjà existante), le tout inclus dans le prix du site (aucun coût
 -- supplémentaire). L'argent va directement sur le compte marchand du
--- commerçant chez Vesus Finances Tech (jamais sur un compte Sama Site) —
--- chaque site payé reçoit sa PROPRE clé API Vesus, fournie par Vesus à
+-- commerçant chez Versus Finances Tech (jamais sur un compte Sama Site) —
+-- chaque site payé reçoit sa PROPRE clé API Versus, fournie par Versus à
 -- Oumar au moment de la livraison, qu'il saisit ensuite dans ce dashboard.
 --
 -- Règles :
@@ -34,13 +34,13 @@ alter table sama_site.sites add column if not exists paiement_en_ligne_actif boo
 -- depuis le navigateur du commerçant ni celui de ses clients.
 create table if not exists sama_site.paiements_boutique_config (
   site_id uuid primary key references sama_site.sites(id) on delete cascade,
-  fournisseur text not null default 'vesus',
+  fournisseur text not null default 'Versus',
   api_key text not null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
--- Enregistre/remplace la clé API Vesus d'un site et active le paiement en
+-- Enregistre/remplace la clé API Versus d'un site et active le paiement en
 -- ligne. Réservé à l'administrateur, et seulement pour un site déjà payé
 -- (statut = 'actif') — jamais un essai.
 create or replace function sama_site.definir_paiement_en_ligne_admin(p_site_id uuid, p_api_key text)
@@ -68,7 +68,7 @@ begin
   end if;
 
   insert into sama_site.paiements_boutique_config (site_id, fournisseur, api_key, updated_at)
-  values (p_site_id, 'vesus', btrim(p_api_key), now())
+  values (p_site_id, 'Versus', btrim(p_api_key), now())
   on conflict (site_id) do update set api_key = excluded.api_key, updated_at = now();
 
   update sama_site.sites set paiement_en_ligne_actif = true where id = p_site_id;

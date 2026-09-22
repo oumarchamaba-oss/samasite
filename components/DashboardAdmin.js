@@ -269,11 +269,11 @@ export default function DashboardAdmin() {
     if (!error) chargerClients();
   };
 
-  // Active le paiement en ligne (Vesus) d'un site déjà payé, en enregistrant
-  // la clé API fournie par Vesus pour CE site précis — voir
+  // Active le paiement en ligne (Versus) d'un site déjà payé, en enregistrant
+  // la clé API fournie par Versus pour CE site précis — voir
   // migration_selfhosted_20260922_paiement_en_ligne.sql.
   const activerPaiementBoutique = async (client) => {
-    if (!paiementBoutiqueCle.trim()) { setPaiementBoutiqueErreur("Collez la clé API fournie par Vesus."); return; }
+    if (!paiementBoutiqueCle.trim()) { setPaiementBoutiqueErreur("Collez la clé API fournie par Versus."); return; }
     setPaiementBoutiqueTraitement(true);
     setPaiementBoutiqueErreur("");
     const { error } = await supabase.rpc("definir_paiement_en_ligne_admin", { p_site_id: client.id, p_api_key: paiementBoutiqueCle.trim() });
@@ -639,7 +639,7 @@ export default function DashboardAdmin() {
                     c.paiement_en_ligne_actif ? (
                       <div className="flex items-center gap-1.5">
                         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold" style={{ background: "rgba(34,197,94,0.18)", color: "#4ADE80" }}>
-                          <Wallet size={11} /> Paiement en ligne actif (Vesus)
+                          <Wallet size={11} /> Paiement en ligne actif (Versus)
                         </span>
                         <button onClick={() => desactiverPaiementBoutique(c)} disabled={paiementBoutiqueTraitement} aria-label="Désactiver le paiement en ligne" title="Désactiver le paiement en ligne"
                           className="px-2 py-1 rounded-full text-xs font-semibold disabled:opacity-40" style={{ background: "rgba(255,255,255,0.1)", color: T.blanc }}>Désactiver</button>
@@ -647,7 +647,7 @@ export default function DashboardAdmin() {
                     ) : paiementBoutiqueOuvert === c.id ? (
                       <div className="flex flex-col items-end gap-1">
                         <div className="flex items-center gap-1.5">
-                          <input value={paiementBoutiqueCle} onChange={(e) => setPaiementBoutiqueCle(e.target.value)} placeholder="Clé API Vesus"
+                          <input value={paiementBoutiqueCle} onChange={(e) => setPaiementBoutiqueCle(e.target.value)} placeholder="Clé API Versus"
                             className="rounded-full px-3 py-1.5 text-xs outline-none" style={{ background: "rgba(255,255,255,0.08)", color: T.blanc, border: "1px solid rgba(255,255,255,0.15)", width: 160 }} />
                           <button onClick={() => activerPaiementBoutique(c)} disabled={paiementBoutiqueTraitement} className="px-2.5 py-1.5 rounded-full text-xs font-bold disabled:opacity-40" style={{ background: T.jaune, color: T.bleuFonce }}>{paiementBoutiqueTraitement ? "…" : "Valider"}</button>
                           <button onClick={() => { setPaiementBoutiqueOuvert(null); setPaiementBoutiqueErreur(""); }} className="px-2 py-1.5 rounded-full text-xs font-semibold" style={{ background: "rgba(255,255,255,0.1)", color: T.blanc }}>Annuler</button>

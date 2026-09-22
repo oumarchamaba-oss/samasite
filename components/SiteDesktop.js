@@ -26,8 +26,8 @@ function CarteProduit({ item, index, p, Icon, nom, actionLabel, whatsapp, suffix
   const [paiementNote, setPaiementNote] = useState("");
   const message = `Bonjour ${nom}, je souhaite ${actionLabel.toLowerCase()} : ${item.texte}${item.prix ? ` (${item.prix})` : ""}${suffixeMode}.`;
 
-  // Paiement en ligne (Vesus) — voir lib/paiementBoutiqueGateway.js. Tant que
-  // l'API Vesus n'est pas branchée, "automatique" vaut toujours false : on
+  // Paiement en ligne (Versus) — voir lib/paiementBoutiqueGateway.js. Tant que
+  // l'API Versus n'est pas branchée, "automatique" vaut toujours false : on
   // affiche alors un message clair au lieu de simuler un paiement réussi, et
   // le client garde la commande WhatsApp ci-dessus comme solution immédiate.
   const payerEnLigne = async () => {
