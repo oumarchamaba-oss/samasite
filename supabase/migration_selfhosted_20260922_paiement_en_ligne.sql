@@ -226,6 +226,10 @@ grant execute on function sama_site.modifier_site_par_jeton to anon, authenticat
 -- /s/{slug} et le fichier téléchargé sachent s'ils doivent afficher les
 -- moyens de paiement — copie exacte du reste depuis
 -- migration_selfhosted_20260921_suppression_site.sql.
+-- Note : "create or replace" ne peut pas changer la liste des colonnes de
+-- retour d'une fonction existante (PostgreSQL l'interdit) — on la supprime
+-- donc explicitement avant de la recréer avec la nouvelle colonne.
+drop function if exists sama_site.obtenir_site_public_par_slug(text);
 create or replace function sama_site.obtenir_site_public_par_slug(p_slug text)
 returns table (
   nom_entreprise text,
