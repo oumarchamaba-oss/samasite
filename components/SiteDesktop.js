@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
-import { MessageCircle, Phone, Mail, MapPin, ExternalLink, Clock, X, Maximize2 } from "lucide-react";
+import { MessageCircle, Phone, Mail, MapPin, ExternalLink, Clock, X, Maximize2, CreditCard } from "lucide-react";
 import { T, SECTEURS, SECTEUR_COULEURS, RESEAUX_SOCIAUX, MODES_LIVRAISON, genererSchema, trouverMetier, trouverIconeMetier, assombrir, paletteIdPour, formaterHoraires } from "../lib/data";
 import { useReveal } from "../lib/useReveal";
+import { initierPaiementBoutique } from "../lib/paiementBoutiqueGateway";
 
 function normaliserItems(rawItems) {
   return (rawItems || []).map((it) => typeof it === "string"
@@ -19,9 +20,27 @@ function whatsappHref(number, message = "") {
 
 // Carte produit/service individuelle — s'anime à l'entrée dans le viewport,
 // avec un léger décalage (stagger) selon sa position dans la liste.
-function CarteProduit({ item, index, p, Icon, nom, actionLabel, whatsapp, suffixeMode, onOuvrirImage }) {
+function CarteProduit({ item, index, p, Icon, nom, actionLabel, whatsapp, suffixeMode, onOuvrirImage, paiementActif, slug }) {
   const [ref, visible] = useReveal();
+  const [paiementEnCours, setPaiementEnCours] = useState(false);
+  const [paiementNote, setPaiementNote] = useState("");
   const message = `Bonjour ${nom}, je souhaite ${actionLabel.toLowerCase()} : ${item.texte}${item.prix ? ` (${item.prix})` : ""}${suffixeMode}.`;
+
+  // Paiement en ligne (Vesus) — voir lib/paiementBoutiqueGateway.js. Tant que
+  // l'API Vesus n'est pas branchée, "automatique" vaut toujours false : on
+  // affiche alors un message clair au lieu de simuler un paiement réussi, et
+  // le client garde la commande WhatsApp ci-dessus comme solution immédiate.
+  const payerEnLigne = async () => {
+    setPaiementEnCours(true);
+    setPaiementNote("");
+    const { automatique, lienPaiement } = await initierPaiementBoutique({
+      slug, produitId: item.id, produitTexte: item.texte, montant: item.prix, moyenPaiement: null,
+    });
+    setPaiementEnCours(false);
+    if (automatique && lienPaiement) { window.location.href = lienPaiement; return; }
+    setPaiementNote("Paiement en ligne bientôt disponible — commandez via WhatsApp en attendant.");
+  };
+
   return (
     <article
       ref={ref}
@@ -33,8 +52,8 @@ function CarteProduit({ item, index, p, Icon, nom, actionLabel, whatsapp, suffix
         // quelle que soit l'orientation de la photo (verticale, horizontale,
         // carrée) — la photo complète, non recadrée, s'affiche au clic dans
         // le lightbox ci-dessous (voir demande du 21/09/2026, points 2 et 3).
-        <button type="button" onClick={() => onOuvrirImage?.(item)} className="relative w-full h-40 block group" aria-label={`Voir la photo complète de ${item.texte}`}>
-          <img src={item.image} alt={item.texte} className="w-full h-40 object-cover" />
+        <button type="button" onClick={() => onOuvrirImage?.(item)} className="relative w-full h-40 block group overflow-hidden" aria-label={`Voir la photo complète de ${item.texte}`}>
+          <img src={item.image} alt={item.texte} className="image-zoom-hover w-full h-40 object-cover" />
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ background: "rgba(15,23,42,.35)" }}>
             <Maximize2 size={20} color="#fff" />
           </div>
@@ -49,6 +68,17 @@ function CarteProduit({ item, index, p, Icon, nom, actionLabel, whatsapp, suffix
         <a href={whatsappHref(whatsapp, message)} target="_blank" rel="noopener noreferrer" className="bouton-hover mt-4 w-full inline-flex items-center justify-center gap-2 rounded-full py-2.5 text-xs font-bold text-white" style={{ background: "#25D366" }}>
           <MessageCircle size={14} /> {actionLabel}
         </a>
+        {paiementActif && (
+          <>
+            <button type="button" onClick={payerEnLigne} disabled={paiementEnCours}
+              className="shine-hover mt-2 w-full inline-flex items-center justify-center gap-2 rounded-full py-2.5 text-xs font-bold disabled:opacity-60"
+              style={{ background: T.blanc, border: `1.5px solid ${p.primaire}`, color: p.primaire }}>
+              <CreditCard size={14} /> {paiementEnCours ? "…" : "Payer en ligne"}
+            </button>
+            <p className="text-[10px] mt-1.5 text-center leading-snug" style={{ color: T.gris }}>Orange Money · Wave · Free Money · Visa · Mastercard</p>
+            {paiementNote && <p className="text-[10px] mt-1 text-center leading-snug" style={{ color: p.primaire }}>{paiementNote}</p>}
+          </>
+        )}
       </div>
     </article>
   );
@@ -74,6 +104,15 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
     document.body.style.overflow = "hidden";
     return () => { window.removeEventListener("keydown", surEchap); document.body.style.overflow = overflowPrecedent; };
   }, [imageOuverte]);
+  // En-tête sticky : une ombre discrète apparaît dès que la page est
+  // défilée, pour la détacher visuellement du contenu qui passe dessous.
+  const [defile, setDefile] = useState(false);
+  useEffect(() => {
+    const surScroll = () => setDefile(window.scrollY > 8);
+    surScroll();
+    window.addEventListener("scroll", surScroll, { passive: true });
+    return () => window.removeEventListener("scroll", surScroll);
+  }, []);
   const modesDispo = (business.modesLivraison && business.modesLivraison.length ? business.modesLivraison : secteur.modesLivraison) || [];
   const [modeCommande, setModeCommande] = useState(modesDispo[0] || null);
   const demoMetier = business.metier ? trouverMetier(business.metier)?.demo : null;
@@ -110,7 +149,7 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
   return (
     <div className="w-full overflow-hidden" style={{ background: T.blanc }}>
       {/* 1. BANNIÈRE / HEADER */}
-      <header className="sticky top-0 z-20 px-5 md:px-10 py-3.5" style={{ background: "rgba(255,255,255,0.96)", borderBottom: `1px solid ${T.bleuClairBord}`, backdropFilter: "blur(10px)" }}>
+      <header className={`entete-flottant ${defile ? "entete-flottant-actif" : ""} sticky top-0 z-20 px-5 md:px-10 py-3.5`} style={{ background: "rgba(255,255,255,0.96)", borderBottom: `1px solid ${T.bleuClairBord}`, backdropFilter: "blur(10px)" }}>
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
           <a href="#accueil" className="flex items-center gap-2.5 min-w-0">
             {business.logo ? (
@@ -121,11 +160,11 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
             <span className="font-bold text-base truncate" style={{ color: T.encre }}>{nom}</span>
           </a>
           <nav className="hidden md:flex items-center gap-7">
-            <a href="#accueil" className="text-sm font-medium transition-opacity duration-200 hover:opacity-60" style={{ color: T.encre }}>Accueil</a>
-            <a href="#produits" className="text-sm font-medium transition-opacity duration-200 hover:opacity-60" style={{ color: T.gris }}>{catalogueLabel}</a>
-            <a href="#contact" className="text-sm font-medium transition-opacity duration-200 hover:opacity-60" style={{ color: T.gris }}>Contact</a>
+            <a href="#accueil" className="lien-nav-anime text-sm font-medium transition-opacity duration-200 hover:opacity-60" style={{ color: T.encre }}>Accueil</a>
+            <a href="#produits" className="lien-nav-anime text-sm font-medium transition-opacity duration-200 hover:opacity-60" style={{ color: T.gris }}>{catalogueLabel}</a>
+            <a href="#contact" className="lien-nav-anime text-sm font-medium transition-opacity duration-200 hover:opacity-60" style={{ color: T.gris }}>Contact</a>
           </nav>
-          <a href={waGeneral} target="_blank" rel="noopener noreferrer" className="bouton-hover shrink-0 flex items-center gap-2 rounded-full px-4 py-2.5 text-xs md:text-sm font-bold text-white" style={{ background: "#25D366" }}>
+          <a href={waGeneral} target="_blank" rel="noopener noreferrer" className="bouton-hover shine-hover shrink-0 flex items-center gap-2 rounded-full px-4 py-2.5 text-xs md:text-sm font-bold text-white" style={{ background: "#25D366" }}>
             <MessageCircle size={15} /> <span className="hidden sm:inline">{actionLabel}</span><span className="sm:hidden">WhatsApp</span>
           </a>
         </div>
@@ -140,7 +179,7 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
       <section id="accueil" className="scroll-mt-20 relative overflow-hidden min-h-[460px] md:min-h-[560px] flex items-center" style={{ background: p.fond }}>
         {business.banniere ? (
           <>
-            <img src={business.banniere} alt={nom} className="absolute inset-0 w-full h-full object-cover" />
+            <img src={business.banniere} alt={nom} className="hero-media-anim absolute inset-0 w-full h-full object-cover" />
             <div className="absolute inset-0" style={{ background: "linear-gradient(100deg, rgba(255,255,255,.97) 0%, rgba(255,255,255,.90) 38%, rgba(255,255,255,.55) 62%, rgba(255,255,255,.12) 100%)" }} />
           </>
         ) : (
@@ -148,17 +187,17 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
             <Icon size={110} color={p.primaire} strokeWidth={1.1} className="hidden md:block" />
           </div>
         )}
-        <div ref={heroTexteRef} className={`reveal ${heroTexteVisible ? "reveal-visible" : ""} relative z-10 max-w-6xl mx-auto w-full px-6 md:px-10 py-16 md:py-24`}>
+        <div ref={heroTexteRef} className="relative z-10 max-w-6xl mx-auto w-full px-6 md:px-10 py-16 md:py-24">
           <div className="max-w-xl">
-            <p className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: p.primaire }}>Bienvenue chez {nom}</p>
-            <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.05] tracking-tight" style={{ color: T.encre }}>
+            <p className={`reveal ${heroTexteVisible ? "reveal-visible" : ""} text-xs font-bold uppercase tracking-wider mb-4`} style={{ color: p.primaire }}>Bienvenue chez {nom}</p>
+            <h1 className={`reveal ${heroTexteVisible ? "reveal-visible" : ""} text-4xl md:text-5xl font-extrabold leading-[1.05] tracking-tight`} style={{ color: T.encre, transitionDelay: "90ms" }}>
               {titreAvant}{titreAvant ? " " : ""}<span style={{ color: p.primaire }}>{titreHighlight}</span>
             </h1>
-            <p className="text-base md:text-lg leading-relaxed mt-5" style={{ color: T.gris }}>
+            <p className={`reveal ${heroTexteVisible ? "reveal-visible" : ""} text-base md:text-lg leading-relaxed mt-5`} style={{ color: T.gris, transitionDelay: "170ms" }}>
               {business.metier ? `${business.metier} — ` : ""}{estService ? "Des services pensés pour répondre simplement à vos besoins." : "Des produits sélectionnés avec soin pour vous."}
             </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <a href={waGeneral} target="_blank" rel="noopener noreferrer" className="bouton-hover inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-bold text-white" style={{ background: heroFonce }}>
+            <div className={`reveal ${heroTexteVisible ? "reveal-visible" : ""} mt-7 flex flex-wrap gap-3`} style={{ transitionDelay: "250ms" }}>
+              <a href={waGeneral} target="_blank" rel="noopener noreferrer" className="bouton-hover shine-hover inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-bold text-white" style={{ background: heroFonce }}>
                 <MessageCircle size={17} /> {actionLabel} sur WhatsApp
               </a>
             </div>
@@ -206,7 +245,7 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
           {items.length > 0 ? (
             <div className="flex gap-5 overflow-x-auto pb-3 snap-x" style={{ scrollbarWidth: "none" }}>
               {itemsAffiches.map((item, i) => (
-                <CarteProduit key={item.id || `${item.texte}-${i}`} item={item} index={i} p={p} Icon={Icon} nom={nom} actionLabel={actionLabel} whatsapp={business.whatsapp} suffixeMode={suffixeMode} onOuvrirImage={setImageOuverte} />
+                <CarteProduit key={item.id || `${item.texte}-${i}`} item={item} index={i} p={p} Icon={Icon} nom={nom} actionLabel={actionLabel} whatsapp={business.whatsapp} suffixeMode={suffixeMode} onOuvrirImage={setImageOuverte} paiementActif={paye && !!business.paiement_en_ligne_actif} slug={business.slug} />
               ))}
             </div>
           ) : (
@@ -215,7 +254,7 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
               <p className="mt-4 text-sm font-semibold" style={{ color: T.encre }}>{estService ? "Aucun service pour le moment" : "Aucun produit pour le moment"}</p>
               <p className="mt-1 text-xs max-w-xs" style={{ color: T.gris }}>{nom} n'a pas encore ajouté de {estService ? "service" : "produit"}. Revenez bientôt, ou contactez-nous directement.</p>
               {business.whatsapp && (
-                <a href={waGeneral} target="_blank" rel="noopener noreferrer" className="bouton-hover inline-flex items-center gap-2 rounded-full px-5 py-2.5 mt-5 text-xs font-bold text-white" style={{ background: heroFonce }}>
+                <a href={waGeneral} target="_blank" rel="noopener noreferrer" className="bouton-hover shine-hover inline-flex items-center gap-2 rounded-full px-5 py-2.5 mt-5 text-xs font-bold text-white" style={{ background: heroFonce }}>
                   <MessageCircle size={14} /> Nous contacter sur WhatsApp
                 </a>
               )}

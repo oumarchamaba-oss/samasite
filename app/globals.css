@@ -67,6 +67,88 @@ h1, h2, h3, h4 {
   background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
+/* ============================================================
+   Animations "premium" ajoutées le 22/09/2026 — demande explicite
+   d'un rendu plus soigné et professionnel, en plus du scroll-reveal
+   déjà en place ci-dessus. Toutes respectent prefers-reduced-motion
+   (voir la media query en bas de fichier).
+   ============================================================ */
+
+/* Photo de bannière (hero) : très léger zoom continu ("Ken Burns"), pour
+   donner une impression de mouvement discret sans jamais gêner la lecture
+   du texte superposé. */
+@keyframes kenBurns {
+  from { transform: scale(1); }
+  to { transform: scale(1.06); }
+}
+.hero-media-anim {
+  animation: kenBurns 18s ease-out infinite alternate;
+  will-change: transform;
+}
+
+/* Photo produit/service : léger zoom au survol de la carte (le conteneur
+   parent doit avoir overflow:hidden — voir .carte-hover dans SiteDesktop.js). */
+.image-zoom-hover {
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.carte-hover:hover .image-zoom-hover {
+  transform: scale(1.07);
+}
+
+/* Boutons d'appel à l'action principaux (WhatsApp, paiement en ligne...) :
+   un léger reflet qui balaie le bouton au survol, en plus de l'élévation
+   déjà gérée par .bouton-hover. Discret et rapide — reste professionnel. */
+.shine-hover {
+  position: relative;
+  overflow: hidden;
+}
+.shine-hover::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(115deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.65s ease;
+  pointer-events: none;
+}
+.shine-hover:hover::after {
+  left: 130%;
+}
+
+/* En-tête sticky : ombre qui apparaît en douceur dès que la page est
+   défilée, pour détacher visuellement l'en-tête du contenu qui passe
+   dessous (au lieu d'un simple filet de bordure fixe). */
+.entete-flottant {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.entete-flottant-actif {
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+  border-color: transparent !important;
+}
+
+/* Liens de navigation desktop : soulignement animé qui se déploie depuis le
+   centre au survol, au lieu d'un simple changement d'opacité. */
+.lien-nav-anime {
+  position: relative;
+}
+.lien-nav-anime::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  width: 0%;
+  height: 2px;
+  background: currentColor;
+  transition: width 0.25s ease, left 0.25s ease;
+}
+.lien-nav-anime:hover::after {
+  width: 100%;
+  left: 0%;
+}
+
 /* Petite entrée en fondu utilisée dans l'aperçu mobile de l'assistant de
    création (ApercuSite.js), où le scroll-reveal n'est pas pertinent car
    le contenu défile dans un cadre de téléphone miniature. */
@@ -81,7 +163,8 @@ h1, h2, h3, h4 {
 /* Respecte la préférence système "mouvement réduit". */
 @media (prefers-reduced-motion: reduce) {
   html, body { scroll-behavior: auto; }
-  .reveal, .reveal-visible, .carte-hover, .carte-hover-sombre, .bouton-hover, .entree-douce {
+  .reveal, .reveal-visible, .carte-hover, .carte-hover-sombre, .bouton-hover, .entree-douce,
+  .hero-media-anim, .image-zoom-hover, .shine-hover::after, .entete-flottant, .lien-nav-anime::after {
     transition: none !important;
     animation: none !important;
     transform: none !important;

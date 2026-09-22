@@ -136,6 +136,7 @@ export default function EditerSite({ mode, token, site: siteInitial, onSaved }) 
       reseaux: site.reseaux,
       modes_livraison: site.modes_livraison,
       horaires: site.horaires || horairesParDefaut(),
+      paiement_en_ligne_demande: !!site.paiement_en_ligne_demande,
     };
 
     const etaitActif = site.statut === "actif";
@@ -320,6 +321,19 @@ export default function EditerSite({ mode, token, site: siteInitial, onSaved }) 
             </div>
           </>
         )}
+
+        <label className="flex items-start gap-2.5 rounded-xl px-3.5 py-3 mb-5 cursor-pointer" style={{ background: T.bleuClair, border: `1.5px solid ${T.bleuClairBord}` }}>
+          <input type="checkbox" checked={!!site.paiement_en_ligne_demande}
+            onChange={(e) => majChamp("paiement_en_ligne_demande", e.target.checked)}
+            className="mt-0.5" />
+          <span className="text-xs" style={{ color: T.encre }}>
+            <span className="font-semibold">Recevoir des paiements en ligne</span> (Orange Money, Wave, Free Money, Visa, Mastercard) directement sur mon site — inclus dans le prix, aucun coût supplémentaire.
+            {site.statut === "actif"
+              ? " Une fois demandé, l'administrateur active la connexion à votre compte marchand sous peu."
+              : " Disponible dès que votre site est payé et livré ; en attendant, vos clients commandent via WhatsApp."}
+            {site.paiement_en_ligne_actif && <span className="font-semibold" style={{ color: T.vert }}> · Déjà actif sur votre site.</span>}
+          </span>
+        </label>
 
         <label className="block text-xs font-semibold mb-2" style={{ color: T.gris }}>Réseaux sociaux (facultatif)</label>
         <div className="space-y-2 mb-5">

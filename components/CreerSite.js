@@ -35,6 +35,7 @@ export default function CreerSite() {
     banniere: null, lienGoogleMaps: "", logo: null, couleurs: null,
     produits: [], reseaux: { facebook: "", instagram: "", tiktok: "", twitter: "" },
     modesLivraison: [], metier: "", metierGroupe: "", horaires: horairesParDefaut(),
+    paiementEnLigneDemande: false,
   });
   const [paye, setPaye] = useState(false);
   const [payeAutomatiquement, setPayeAutomatiquement] = useState(false);
@@ -292,6 +293,7 @@ export default function CreerSite() {
       reseaux: business.reseaux || {},
       modes_livraison: business.modesLivraison || [],
       horaires: business.horaires || null,
+      paiement_en_ligne_demande: !!business.paiementEnLigneDemande,
     };
 
     // BUG CORRIGÉ (21/09/2026) : cette fonction faisait toujours un insert(),
@@ -796,6 +798,15 @@ export default function CreerSite() {
                 </div>
               </>
             )}
+
+            <label className="flex items-start gap-2.5 rounded-xl px-3.5 py-3 mb-6 cursor-pointer" style={{ background: T.bleuClair, border: `1.5px solid ${T.bleuClairBord}` }}>
+              <input type="checkbox" checked={!!business.paiementEnLigneDemande}
+                onChange={(e) => setBusiness((b) => ({ ...b, paiementEnLigneDemande: e.target.checked }))}
+                className="mt-0.5" />
+              <span className="text-xs" style={{ color: T.encre }}>
+                <span className="font-semibold">Recevoir des paiements en ligne</span> (Orange Money, Wave, Free Money, Visa, Mastercard) directement sur mon site — inclus dans le prix, aucun coût supplémentaire. Disponible dès que votre site est payé et livré ; en attendant, vos clients commandent via WhatsApp.
+              </span>
+            </label>
 
             <label className="block text-xs font-semibold mb-2" style={{ color: T.gris }}>Réseaux sociaux (facultatif)</label>
             <div className="grid grid-cols-2 gap-2 mb-4">
