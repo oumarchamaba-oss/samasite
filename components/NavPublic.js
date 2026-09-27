@@ -2,8 +2,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sparkles, X, Menu } from "lucide-react";
-import { T, LOGO_SAMASITE, DrapeauSenegal, WHATSAPP_SUPPORT, WHATSAPP_AVATAR } from "../lib/data";
+import { Sparkles, X, Menu, MessageCircle } from "lucide-react";
+import { T, LOGO_SAMASITE, DrapeauSenegal, WHATSAPP_SUPPORT } from "../lib/data";
 
 export default function NavPublic() {
   const [menuOuvert, setMenuOuvert] = useState(false);
@@ -33,9 +33,9 @@ export default function NavPublic() {
             </Link>
           ))}
           <a href={`https://wa.me/${WHATSAPP_SUPPORT}`} target="_blank" rel="noopener noreferrer" title="Contactez-nous sur WhatsApp"
-            className="relative ml-1 shrink-0 transition-transform duration-200 hover:scale-105">
-            <img src={WHATSAPP_AVATAR} alt="Assistance Sama Site sur WhatsApp" className="w-9 h-9 rounded-full object-cover" style={{ border: "2px solid #25D366" }} />
-            <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center" style={{ background: "#25D366", border: "1.5px solid #fff" }} />
+            aria-label="Contactez-nous sur WhatsApp"
+            className="relative ml-1 shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-transform duration-200 hover:scale-105" style={{ background: "#25D366" }}>
+            <MessageCircle size={18} color="#fff" strokeWidth={2} />
           </a>
           <Link
             href="/creer"
@@ -47,9 +47,10 @@ export default function NavPublic() {
         </div>
 
         <div className="flex items-center gap-3 sm:hidden">
-          <a href={`https://wa.me/${WHATSAPP_SUPPORT}`} target="_blank" rel="noopener noreferrer" title="Contactez-nous sur WhatsApp" className="relative shrink-0">
-            <img src={WHATSAPP_AVATAR} alt="Assistance Sama Site sur WhatsApp" className="w-8 h-8 rounded-full object-cover" style={{ border: "2px solid #25D366" }} />
-            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full" style={{ background: "#25D366", border: "1.5px solid #fff" }} />
+          <a href={`https://wa.me/${WHATSAPP_SUPPORT}`} target="_blank" rel="noopener noreferrer" title="Contactez-nous sur WhatsApp"
+            aria-label="Contactez-nous sur WhatsApp"
+            className="relative shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "#25D366" }}>
+            <MessageCircle size={16} color="#fff" strokeWidth={2} />
           </a>
           <button onClick={() => setMenuOuvert((v) => !v)} aria-label={menuOuvert ? "Fermer le menu" : "Ouvrir le menu"} className="transition-transform duration-200 active:scale-90">
             {menuOuvert ? <X size={22} color={T.encre} /> : <Menu size={22} color={T.encre} />}

@@ -29,11 +29,11 @@ export default function CGU() {
 
         <Section titre="1. Objet">
           <p>
-            Sama Site est un produit édité par Codesign Center SN SUARL (NINEA 010238758, RCCM SN
-            DKR 2023 B 18462), joignable à Cité Keur Gorgui, Rond-point, Dakar 23119, Sénégal.
-            Il permet à un commerce de créer un mini-site e-commerce avec prise de commande
-            via WhatsApp, sans compétence technique. En créant un site avec Sama Site, vous acceptez
-            les présentes conditions.
+            Sama Site est un produit de Versus Finances Tech, édité par Codesign Center SN SUARL
+            (NINEA 010238758, RCCM SN DKR 2023 B 18462), joignable à Cité Keur Gorgui, Rond-point,
+            Dakar 23119, Sénégal. Il permet à un commerce de créer un mini-site e-commerce avec prise
+            de commande via WhatsApp, sans compétence technique. En créant un site avec Sama Site,
+            vous acceptez les présentes conditions.
           </p>
         </Section>
 

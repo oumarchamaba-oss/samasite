@@ -29,9 +29,10 @@ export default function Confidentialite() {
 
         <Section titre="Qui est responsable de vos données">
           <p>
-            Sama Site est un produit de Codesign Center SN SUARL (NINEA 010238758, RCCM SN DKR
-            2023 B 18462), joignable à Cité Keur Gorgui, Rond-point, Dakar 23119, Sénégal.
-            Pour toute question relative à vos données personnelles, contactez oumarchamaba@gmail.com.
+            Sama Site est un produit de Versus Finances Tech, édité par Codesign Center SN SUARL
+            (NINEA 010238758, RCCM SN DKR 2023 B 18462), joignable à Cité Keur Gorgui, Rond-point,
+            Dakar 23119, Sénégal. Pour toute question relative à vos données personnelles, contactez
+            oumarchamaba@gmail.com.
           </p>
         </Section>
 

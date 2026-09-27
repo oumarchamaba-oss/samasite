@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Sparkles, Clock, CheckCircle2, ArrowRight, Globe, Edit3, LogOut, Lock, Copy, Check, Trash2, AlertTriangle } from "lucide-react";
-import { T, SECTEURS, WHATSAPP_SUPPORT, WHATSAPP_AVATAR, Badge } from "../lib/data";
+import { Sparkles, Clock, CheckCircle2, ArrowRight, Globe, Edit3, LogOut, Lock, Copy, Check, Trash2, AlertTriangle, MessageCircle } from "lucide-react";
+import { T, SECTEURS, WHATSAPP_SUPPORT, Badge } from "../lib/data";
 import { supabase } from "../lib/supabaseClient";
 
 // Le statut "expire" n'est presque jamais posé automatiquement en base (rien
@@ -212,7 +212,9 @@ export default function MonEspace() {
 
       <a href={`https://wa.me/${WHATSAPP_SUPPORT}`} target="_blank" rel="noopener noreferrer"
         className="rounded-2xl p-5 flex items-center gap-3" style={{ background: T.bleuClair }}>
-        <img src={WHATSAPP_AVATAR} alt="Assistance Sama Site" className="w-10 h-10 rounded-full object-cover shrink-0" style={{ border: "2px solid #25D366" }} />
+        <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: "#25D366" }}>
+          <MessageCircle size={20} color="#fff" strokeWidth={2} />
+        </div>
         <div className="flex-1">
           <div className="text-sm font-semibold" style={{ color: T.encre }}>Contactez-nous sur WhatsApp</div>
           <div className="text-xs mt-0.5" style={{ color: T.gris }}>Besoin d'être assisté ? Écrivez-nous, on répond vite.</div>

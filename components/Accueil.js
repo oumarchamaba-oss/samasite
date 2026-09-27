@@ -1,10 +1,10 @@
 "use client";
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Sparkles, CheckCircle2, ArrowRight, Briefcase, Phone, Lock, ChevronDown, LayoutTemplate, Palette as PaletteIcon, ShoppingCart, Headphones, Smartphone, ShieldCheck, CreditCard } from "lucide-react";
+import { Sparkles, CheckCircle2, ArrowRight, Briefcase, MessageCircle, ChevronDown, LayoutTemplate, Palette as PaletteIcon, ShoppingCart, Headphones, Smartphone, ShieldCheck, CreditCard } from "lucide-react";
 import {
   T, SECTEURS, CLIENTS_CONFIANCE, FAQ, COMMENT_CA_MARCHE,
-  WHATSAPP_SUPPORT, WHATSAPP_AVATAR, LOGO_SAMASITE, DrapeauSenegal, Badge,
+  WHATSAPP_SUPPORT, LOGO_SAMASITE, DrapeauSenegal, Badge, VERSUS_FINANCES_URL,
 } from "../lib/data";
 import { IMG_HERO, IMG_TRUST1, IMG_TRUST2, IMG_TRUST3, IMG_TRUST4 } from "../lib/images";
 import { useReveal } from "../lib/useReveal";
@@ -15,7 +15,7 @@ export default function Accueil({ clients }) {
   const confianceComplete = useMemo(() => {
     const nomsStatiques = new Set(CLIENTS_CONFIANCE.map((c) => c.nom));
     const dynamiques = clients
-      .filter((c) => c.statut !== "expire" && !nomsStatiques.has(c.nom))
+      .filter((c) => c.statut !== "expire" && !nomsStatiques.has(c.nom) && !/test|strangers?/i.test(c.nom || ""))
       .map((c) => {
         const secteurObj = SECTEURS.find((s) => s.id === c.secteurId) || SECTEURS.find((s) => s.label === c.secteur);
         return {
@@ -89,8 +89,12 @@ export default function Accueil({ clients }) {
             { icon: Headphones, titre: "Support client 7j/7", texte: "Une question ? Une équipe vous répond sur WhatsApp." },
             { icon: Smartphone, titre: "100% responsive", texte: "Un rendu soigné, sur ordinateur comme sur smartphone." },
             { icon: ShieldCheck, titre: "Site hébergé et sécurisé", texte: "Votre site en ligne, sans vous soucier de la technique." },
-          ].map((f, i) => (
-            <div key={i} className="carte-hover rounded-2xl p-5" style={{ background: T.bleuClair }}>
+          ].map((f, i, arr) => (
+            <div
+              key={i}
+              className={`carte-hover rounded-2xl p-5${i === arr.length - 1 && arr.length % 3 === 1 ? " col-span-2 sm:col-span-1 sm:col-start-2" : ""}`}
+              style={{ background: T.bleuClair }}
+            >
               <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-3" style={{ background: T.blanc }}>
                 <f.icon size={20} color={T.bleu} strokeWidth={1.8} />
               </div>
@@ -267,13 +271,12 @@ export default function Accueil({ clients }) {
         <div className="max-w-5xl mx-auto px-5 py-10">
           <a href={`https://wa.me/${WHATSAPP_SUPPORT}`} target="_blank" rel="noopener noreferrer"
             className="carte-hover flex items-center gap-3.5 rounded-2xl p-4 mb-8" style={{ background: T.blanc, border: `1.5px solid ${T.bleuClairBord}` }}>
-            <img src={WHATSAPP_AVATAR} alt="Assistance Sama Site" className="w-12 h-12 rounded-full object-cover shrink-0" style={{ border: `2px solid #25D366` }} />
+            <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0" style={{ background: "#25D366" }}>
+              <MessageCircle size={22} color="#fff" strokeWidth={2} />
+            </div>
             <div className="flex-1">
               <div className="font-semibold text-sm" style={{ color: T.encre }}>Contactez-nous sur WhatsApp</div>
               <div className="text-xs" style={{ color: T.gris }}>Besoin d'être assisté ? Écrivez-nous, on répond vite.</div>
-            </div>
-            <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: "#25D366" }}>
-              <Phone size={16} color="#fff" />
             </div>
           </a>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -282,13 +285,15 @@ export default function Accueil({ clients }) {
               <DrapeauSenegal size={12} />
             </div>
             <span className="text-xs" style={{ color: T.gris }}>© 2026 Sama Site — Dakar, Sénégal</span>
-            <Link href="/admin/login" className="text-xs flex items-center gap-1 transition-opacity duration-200 hover:opacity-70" style={{ color: "#CBD5E1" }}>
-              <Lock size={11} /> Espace partenaire
-            </Link>
           </div>
           <div className="flex items-center justify-center gap-4 mt-4">
             <Link href="/confidentialite" className="text-xs transition-opacity duration-200 hover:opacity-70" style={{ color: T.gris }}>Politique de confidentialité</Link>
             <Link href="/cgu" className="text-xs transition-opacity duration-200 hover:opacity-70" style={{ color: T.gris }}>CGU</Link>
+          </div>
+          <div className="text-center mt-5 pt-4" style={{ borderTop: `1px solid ${T.bleuClairBord}` }}>
+            <a href={VERSUS_FINANCES_URL} target="_blank" rel="noopener noreferrer" className="text-xs transition-opacity duration-200 hover:opacity-70" style={{ color: "#94A3B8" }}>
+              Un produit de Versus Finances Tech
+            </a>
           </div>
         </div>
       </div>
