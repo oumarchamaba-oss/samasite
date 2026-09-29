@@ -9,11 +9,26 @@ html, body {
   margin: 0;
   padding: 0;
   scroll-behavior: smooth;
+  /* Filet de sécurité anti-débordement horizontal : si un élément (bouton,
+     image, texte long) venait malgré tout à dépasser sa largeur prévue, la
+     page ne doit jamais s'élargir ni afficher de barre de défilement
+     horizontale, sur téléphone comme sur ordinateur. */
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* Poppins pour les titres — Inter reste la police du corps de texte. */
 h1, h2, h3, h4 {
   font-family: 'Poppins', 'Inter', -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Sécurité anti-débordement pour TOUS les boutons et liens de la plateforme
+   et des mini-sites générés (WhatsApp, paiement, création, dashboard...) :
+   un bouton ne peut jamais dépasser la largeur de son conteneur, quelle que
+   soit la longueur de son libellé (nom de commerce, secteur, action). */
+button, a {
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* ============================================================
@@ -42,9 +57,17 @@ h1, h2, h3, h4 {
   box-shadow: 0 16px 28px rgba(15, 23, 42, 0.12);
 }
 
-/* Boutons (CTA WhatsApp, etc.) : transition douce au survol/clic. */
+/* Boutons (CTA WhatsApp, etc.) : transition douce au survol/clic, et sécurité
+   anti-débordement — si l'icône + le libellé (souvent dynamique : nom du
+   commerce, action du secteur) sont plus larges que l'espace disponible, le
+   contenu passe à la ligne À L'INTÉRIEUR du bouton plutôt que de déborder de
+   son conteneur ou de la carte qui l'entoure. */
 .bouton-hover {
   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+  flex-wrap: wrap;
+  justify-content: center;
+  text-align: center;
+  row-gap: 4px;
 }
 .bouton-hover:hover {
   transform: translateY(-2px);
