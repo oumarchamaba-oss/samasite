@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Sparkles, Clock, CheckCircle2, ArrowRight, Globe, Edit3, LogOut, Lock, Copy, Check, Trash2, AlertTriangle, MessageCircle } from "lucide-react";
+import { Sparkles, Clock, CheckCircle2, ArrowRight, Globe, Edit3, LogOut, Lock, Copy, Check, Trash2, AlertTriangle, MessageCircle, Eye, TrendingUp } from "lucide-react";
 import { T, SECTEURS, WHATSAPP_SUPPORT, Badge } from "../lib/data";
 import { supabase } from "../lib/supabaseClient";
 
@@ -76,6 +76,15 @@ function CarteSite({ site, onSupprime }) {
         {statut === "essai_expire" && <Badge tone="rouge"><Clock size={11} /> Essai terminé — non payé</Badge>}
         {statut === "expire" && <Badge tone="rouge"><Clock size={11} /> Expiré</Badge>}
       </div>
+      {(site.visites_compteur > 0 || site.clics_whatsapp_compteur > 0) && (
+        <div className="flex items-center gap-4 mb-3 text-xs" style={{ color: T.gris }}>
+          <span className="flex items-center gap-1"><Eye size={12} /> {site.visites_compteur ?? 0} visite{(site.visites_compteur ?? 0) > 1 ? "s" : ""}</span>
+          <span className="flex items-center gap-1"><MessageCircle size={12} color="#25D366" /> {site.clics_whatsapp_compteur ?? 0} clic{(site.clics_whatsapp_compteur ?? 0) > 1 ? "s" : ""} WhatsApp</span>
+          {site.visites_compteur > 0 && (
+            <span className="flex items-center gap-1"><TrendingUp size={12} /> {Math.round(((site.clics_whatsapp_compteur ?? 0) / site.visites_compteur) * 100)}% de conversion</span>
+          )}
+        </div>
+      )}
       <div className="flex items-center gap-2 mb-4">
         <a href={paye && site.domaine ? `https://${site.domaine}` : `/${cheminSite}`} target="_blank" rel="noopener noreferrer"
           className="flex-1 flex items-center gap-2 text-sm px-3.5 py-2.5 rounded-lg min-w-0" style={{ background: T.bleuClair, color: T.bleu, textDecoration: "underline" }}>

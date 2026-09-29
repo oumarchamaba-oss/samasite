@@ -79,6 +79,13 @@ export default async function PageSitePublicParSlug({ params }) {
     );
   }
 
+  // Compteur de visites (preuve sociale, audit sept. 2026) — jamais bloquant :
+  // une panne de ce compteur ne doit jamais empêcher l'affichage du site.
+  // La RPC ne renvoyant pas le slug (il sert de clé de recherche, pas de
+  // colonne affichée), on le rattache ici depuis params avant de construire
+  // l'objet "business" attendu par SiteDesktop (paiement en ligne, avis…).
+  supabase.rpc("incrementer_visite_site", { p_slug: params.slug }).then(() => {}, () => {});
+
   // On ne passe JAMAIS l'objet `secteur` en entier ici : il contient des
   // composants d'icône lucide-react (fonctions), et cette page est un
   // Composant Serveur qui rend un Composant Client ("use client" dans
@@ -88,5 +95,5 @@ export default async function PageSitePublicParSlug({ params }) {
   // ce lien public (digest 417911372). Seul secteurId (une chaîne, donc
   // sérialisable) traverse la frontière ; SiteDesktop retrouve lui-même
   // l'objet secteur complet côté client via lib/data.js.
-  return <SiteDesktop secteurId={site.secteur_id} business={businessDepuisSite(site)} paye={site.statut === "actif"} />;
+  return <SiteDesktop secteurId={site.secteur_id} business={businessDepuisSite({ ...site, slug: params.slug })} paye={site.statut === "actif"} />;
 }

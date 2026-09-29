@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, RefreshCw, CheckCircle2, Lock, ArrowRight, Clock, Upload, X, Wallet } from "lucide-react";
+import { Plus, Trash2, RefreshCw, CheckCircle2, Lock, ArrowRight, Clock, Upload, X, Wallet, Eye, MessageCircle as MessageCircleIcon, Star, ThumbsUp, ThumbsDown } from "lucide-react";
 import { T, SECTEURS, SECTEUR_COULEURS, RESEAUX_SOCIAUX, MODES_LIVRAISON, paletteIdPour, genererSchema, horairesParDefaut, PRIX_MODIFICATION, trouverMetier } from "../lib/data";
 import { supabase } from "../lib/supabaseClient";
 import EditeurHoraires from "./EditeurHoraires";
@@ -55,6 +55,25 @@ export default function EditerSite({ mode, token, site: siteInitial, onSaved }) 
   const [succes, setSucces] = useState(false);
   const [sessionExpiree, setSessionExpiree] = useState(false);
   const router = useRouter();
+
+  // Stats de preuve sociale + modération des avis (audit sept. 2026) —
+  // réservées au parcours "owned" (compte requis) : la RPC obtenir_avis_proprietaire
+  // vérifie auth.uid(), qu'un lien privé par jeton ("token") n'a jamais.
+  const [avisListe, setAvisListe] = useState(null);
+  const [modererEnCours, setModererEnCours] = useState(null);
+  useEffect(() => {
+    if (mode !== "owned" || !siteInitial?.id) return;
+    supabase.rpc("obtenir_avis_proprietaire", { p_site_id: siteInitial.id }).then(({ data, error }) => {
+      if (!error) setAvisListe(data || []);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const moderer = async (avisId, statut) => {
+    setModererEnCours(avisId);
+    const { error } = await supabase.rpc("moderer_avis", { p_avis_id: avisId, p_statut: statut });
+    setModererEnCours(null);
+    if (!error) setAvisListe((liste) => liste.map((a) => (a.id === avisId ? { ...a, statut } : a)));
+  };
 
   // Si une précédente tentative d'enregistrement a échoué à cause d'une
   // session expirée, les modifications en cours ont été mises de côté ici —
@@ -129,6 +148,7 @@ export default function EditerSite({ mode, token, site: siteInitial, onSaved }) 
       adresse: site.adresse,
       lien_google_maps: site.lien_google_maps,
       accroche: site.accroche,
+      a_propos: site.a_propos,
       logo_url: site.logo_url,
       banniere_url: site.banniere_url,
       couleurs: site.couleurs,
@@ -203,6 +223,60 @@ export default function EditerSite({ mode, token, site: siteInitial, onSaved }) 
           : <span className="text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1" style={{ background: T.jauneFond, color: T.jauneFonce }}><Clock size={11} /> Essai</span>}
       </div>
 
+      {mode === "owned" && (
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="rounded-2xl p-4 flex items-center gap-3" style={{ background: T.bleuClair }}>
+            <Eye size={18} color={T.bleu} />
+            <div>
+              <p className="text-lg font-extrabold leading-none" style={{ color: T.encre }}>{site.visites_compteur ?? 0}</p>
+              <p className="text-[11px] mt-0.5" style={{ color: T.gris }}>Visites du site</p>
+            </div>
+          </div>
+          <div className="rounded-2xl p-4 flex items-center gap-3" style={{ background: T.bleuClair }}>
+            <MessageCircleIcon size={18} color="#25D366" />
+            <div>
+              <p className="text-lg font-extrabold leading-none" style={{ color: T.encre }}>{site.clics_whatsapp_compteur ?? 0}</p>
+              <p className="text-[11px] mt-0.5" style={{ color: T.gris }}>Clics WhatsApp</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {mode === "owned" && avisListe && avisListe.length > 0 && (
+        <div className="rounded-2xl p-4 mb-6" style={{ border: `1.5px solid ${T.bleuClairBord}` }}>
+          <p className="text-sm font-bold mb-3 flex items-center gap-1.5" style={{ color: T.encre }}><Star size={14} color="#F59E0B" /> Avis clients à modérer</p>
+          <div className="space-y-2.5">
+            {avisListe.map((a) => (
+              <div key={a.id} className="rounded-xl p-3" style={{ background: T.bleuClair }}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((n) => <Star key={n} size={12} color="#F59E0B" fill={n <= a.note ? "#F59E0B" : "none"} />)}
+                    <span className="text-xs font-semibold ml-1.5" style={{ color: T.encre }}>{a.auteur_nom}</span>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{
+                    background: a.statut === "approuve" ? T.vertFond : a.statut === "rejete" ? T.rougeFond : T.jauneFond,
+                    color: a.statut === "approuve" ? T.vert : a.statut === "rejete" ? T.rouge : T.jauneFonce,
+                  }}>{a.statut === "approuve" ? "Publié" : a.statut === "rejete" ? "Rejeté" : "En attente"}</span>
+                </div>
+                {a.commentaire && <p className="text-xs mt-2" style={{ color: T.gris }}>{a.commentaire}</p>}
+                {a.statut === "en_attente" && (
+                  <div className="flex gap-2 mt-2.5">
+                    <button type="button" onClick={() => moderer(a.id, "approuve")} disabled={modererEnCours === a.id}
+                      className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full disabled:opacity-50" style={{ background: T.vertFond, color: T.vert }}>
+                      <ThumbsUp size={12} /> Publier
+                    </button>
+                    <button type="button" onClick={() => moderer(a.id, "rejete")} disabled={modererEnCours === a.id}
+                      className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full disabled:opacity-50" style={{ background: T.rougeFond, color: T.rouge }}>
+                      <ThumbsDown size={12} /> Rejeter
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {!modifiable && (
         <div className="rounded-2xl p-5 mb-6 flex items-start gap-3" style={{ background: T.rougeFond }}>
           <Lock size={18} color={T.rouge} className="mt-0.5 shrink-0" />
@@ -246,7 +320,11 @@ export default function EditerSite({ mode, token, site: siteInitial, onSaved }) 
 
         <label className="block text-xs font-semibold mb-1.5" style={{ color: T.gris }}>Accroche</label>
         <input value={site.accroche || ""} onChange={(e) => majChamp("accroche", e.target.value)}
-          className="w-full rounded-xl px-4 py-3 mb-5 text-sm outline-none" style={{ border: `1.5px solid ${T.bleuClairBord}` }} />
+          className="w-full rounded-xl px-4 py-3 mb-4 text-sm outline-none" style={{ border: `1.5px solid ${T.bleuClairBord}` }} />
+
+        <label className="block text-xs font-semibold mb-1.5" style={{ color: T.gris }}>À propos (facultatif)</label>
+        <textarea value={site.a_propos || ""} onChange={(e) => majChamp("a_propos", e.target.value)} rows={4} placeholder="Présentez votre commerce, votre histoire, ce qui vous distingue…"
+          className="w-full rounded-xl px-4 py-3 mb-5 text-sm outline-none resize-none" style={{ border: `1.5px solid ${T.bleuClairBord}` }} />
 
         <label className="block text-xs font-semibold mb-2" style={{ color: T.gris }}>Logo</label>
         <div className="flex items-center gap-3 mb-5">

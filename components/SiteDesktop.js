@@ -4,6 +4,16 @@ import { MessageCircle, Phone, Mail, MapPin, ExternalLink, Clock, X, Maximize2, 
 import { T, SECTEURS, SECTEUR_COULEURS, RESEAUX_SOCIAUX, MODES_LIVRAISON, genererSchema, trouverMetier, trouverIconeMetier, assombrir, paletteIdPour, formaterHoraires } from "../lib/data";
 import { useReveal } from "../lib/useReveal";
 import { initierPaiementBoutique } from "../lib/paiementBoutiqueGateway";
+import AvisClients from "./AvisClients";
+
+// Compteur de clics WhatsApp (preuve sociale, audit sept. 2026) — jamais
+// bloquant : un échec réseau ne doit jamais empêcher l'ouverture de
+// WhatsApp (le lien whatsappHref() s'ouvre normalement dans tous les cas,
+// cet appel se contente d'incrémenter un compteur en tâche de fond).
+function suivreClicWhatsapp(slug) {
+  if (!slug) return;
+  fetch("/api/site/clic-whatsapp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug }) }).catch(() => {});
+}
 
 function normaliserItems(rawItems) {
   return (rawItems || []).map((it) => typeof it === "string"
@@ -65,7 +75,7 @@ function CarteProduit({ item, index, p, Icon, nom, actionLabel, whatsapp, suffix
         <h3 className="text-sm font-bold leading-snug" style={{ color: T.encre }}>{item.texte}</h3>
         {item.description && <p className="text-xs leading-relaxed mt-1.5 line-clamp-2" style={{ color: T.gris }}>{item.description}</p>}
         {item.prix && <p className="text-sm font-extrabold mt-2" style={{ color: p.primaire }}>{item.prix}</p>}
-        <a href={whatsappHref(whatsapp, message)} target="_blank" rel="noopener noreferrer" className="bouton-hover mt-4 w-full inline-flex items-center justify-center gap-2 rounded-full py-2.5 text-xs font-bold text-white" style={{ background: "#25D366" }}>
+        <a href={whatsappHref(whatsapp, message)} target="_blank" rel="noopener noreferrer" onClick={() => suivreClicWhatsapp(slug)} className="bouton-hover mt-4 w-full inline-flex items-center justify-center gap-2 rounded-full py-2.5 text-xs font-bold text-white" style={{ background: "#25D366" }}>
           <MessageCircle size={14} /> {actionLabel}
         </a>
         {paiementActif && (
@@ -164,7 +174,7 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
             <a href="#produits" className="lien-nav-anime text-sm font-medium transition-opacity duration-200 hover:opacity-60" style={{ color: T.gris }}>{catalogueLabel}</a>
             <a href="#contact" className="lien-nav-anime text-sm font-medium transition-opacity duration-200 hover:opacity-60" style={{ color: T.gris }}>Contact</a>
           </nav>
-          <a href={waGeneral} target="_blank" rel="noopener noreferrer" className="bouton-hover shine-hover shrink-0 flex items-center gap-2 rounded-full px-4 py-2.5 text-xs md:text-sm font-bold text-white" style={{ background: "#25D366" }}>
+          <a href={waGeneral} target="_blank" rel="noopener noreferrer" onClick={() => suivreClicWhatsapp(business.slug)} className="bouton-hover shine-hover shrink-0 flex items-center gap-2 rounded-full px-4 py-2.5 text-xs md:text-sm font-bold text-white" style={{ background: "#25D366" }}>
             <MessageCircle size={15} /> <span className="hidden sm:inline">{actionLabel}</span><span className="sm:hidden">WhatsApp</span>
           </a>
         </div>
@@ -197,7 +207,7 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
               {business.metier ? `${business.metier} — ` : ""}{estService ? "Des services pensés pour répondre simplement à vos besoins." : "Des produits sélectionnés avec soin pour vous."}
             </p>
             <div className={`reveal ${heroTexteVisible ? "reveal-visible" : ""} mt-7 flex flex-wrap gap-3`} style={{ transitionDelay: "250ms" }}>
-              <a href={waGeneral} target="_blank" rel="noopener noreferrer" className="bouton-hover shine-hover inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-bold text-white" style={{ background: heroFonce }}>
+              <a href={waGeneral} target="_blank" rel="noopener noreferrer" onClick={() => suivreClicWhatsapp(business.slug)} className="bouton-hover shine-hover inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-bold text-white" style={{ background: heroFonce }}>
                 <MessageCircle size={17} /> {actionLabel} sur WhatsApp
               </a>
             </div>
@@ -205,6 +215,17 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
         </div>
         {!paye && <div className="absolute z-10 bottom-4 right-4 rounded-full px-3 py-1.5 text-[10px] font-semibold text-white" style={{ background: "rgba(15,23,42,.55)" }}>Créé avec Sama Site</div>}
       </section>
+
+      {/* 2bis. À PROPOS (audit sept. 2026) — n'apparaît que si le commerçant
+          a rempli ce paragraphe libre dans son espace de gestion. */}
+      {business.aPropos && (
+        <section className="border-t" style={{ borderColor: T.bleuClairBord }}>
+          <div className="max-w-6xl mx-auto px-5 md:px-10 py-12">
+            <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: p.primaire }}>À propos</p>
+            <p className="text-sm md:text-base leading-relaxed max-w-2xl whitespace-pre-line" style={{ color: T.encre }}>{business.aPropos}</p>
+          </div>
+        </section>
+      )}
 
       {/* 3. PRODUITS / SERVICES */}
       <section id="produits" className="scroll-mt-20 border-t" style={{ borderColor: T.bleuClairBord }}>
@@ -254,7 +275,7 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
               <p className="mt-4 text-sm font-semibold" style={{ color: T.encre }}>{estService ? "Aucun service pour le moment" : "Aucun produit pour le moment"}</p>
               <p className="mt-1 text-xs max-w-xs" style={{ color: T.gris }}>{nom} n'a pas encore ajouté de {estService ? "service" : "produit"}. Revenez bientôt, ou contactez-nous directement.</p>
               {business.whatsapp && (
-                <a href={waGeneral} target="_blank" rel="noopener noreferrer" className="bouton-hover shine-hover inline-flex items-center gap-2 rounded-full px-5 py-2.5 mt-5 text-xs font-bold text-white" style={{ background: heroFonce }}>
+                <a href={waGeneral} target="_blank" rel="noopener noreferrer" onClick={() => suivreClicWhatsapp(business.slug)} className="bouton-hover shine-hover inline-flex items-center gap-2 rounded-full px-5 py-2.5 mt-5 text-xs font-bold text-white" style={{ background: heroFonce }}>
                   <MessageCircle size={14} /> Nous contacter sur WhatsApp
                 </a>
               )}
@@ -262,6 +283,9 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
           )}
         </div>
       </section>
+
+      {/* 3bis. AVIS CLIENTS (audit sept. 2026) */}
+      <AvisClients slug={business.slug} primaire={p.primaire} fond={p.fond} />
 
       {/* 4. FOOTER */}
       <footer id="contact" ref={footerRef} className={`reveal ${footerVisible ? "reveal-visible" : ""} scroll-mt-20`} style={{ background: footerFonce }}>
@@ -282,7 +306,7 @@ export default function SiteDesktop({ secteur: secteurRecu, secteurId, business,
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-white/45 mb-4">Contact</p>
               <div className="space-y-3">
-                {business.whatsapp && <a href={waGeneral} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-white/80 transition-opacity duration-200 hover:opacity-100 hover:text-white"><MessageCircle size={15} /> {business.whatsapp}</a>}
+                {business.whatsapp && <a href={waGeneral} target="_blank" rel="noopener noreferrer" onClick={() => suivreClicWhatsapp(business.slug)} className="flex items-center gap-2 text-sm text-white/80 transition-opacity duration-200 hover:opacity-100 hover:text-white"><MessageCircle size={15} /> {business.whatsapp}</a>}
                 {business.email && <a href={`mailto:${business.email}`} className="flex items-center gap-2 text-sm text-white/80 transition-opacity duration-200 hover:opacity-100 hover:text-white"><Mail size={15} /> {business.email}</a>}
                 {business.adresse && <div className="flex items-start gap-2 text-sm text-white/80"><MapPin size={15} className="mt-0.5 shrink-0" /> {business.adresse}</div>}
               </div>
